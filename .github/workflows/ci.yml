@@ -75,6 +75,10 @@ jobs:
         working-directory: ./example
         run: npm ci
 
+      - name: Generate Android project (expo prebuild)
+        working-directory: ./example
+        run: npx expo prebuild --platform android --no-install
+
       - name: Run Kotlin unit tests
         working-directory: ./example/android
         run: ./gradlew :tied-siren-blocking-overlay:testDebugUnitTest
