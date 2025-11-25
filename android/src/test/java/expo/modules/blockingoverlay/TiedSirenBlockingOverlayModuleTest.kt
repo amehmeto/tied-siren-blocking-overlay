@@ -41,22 +41,14 @@ class TiedSirenBlockingOverlayModuleTest {
     }
 
     @Test
-    fun `EXTRA_BLOCK_UNTIL constant should have correct value`() {
-        assertEquals("blockUntil", BlockingOverlayActivity.EXTRA_BLOCK_UNTIL)
-    }
-
-    @Test
     fun `intent extras should be set correctly`() {
         val packageName = "com.example.testapp"
-        val blockUntil = 1700000000000L
 
         val intent = Intent().apply {
             putExtra(BlockingOverlayActivity.EXTRA_PACKAGE_NAME, packageName)
-            putExtra(BlockingOverlayActivity.EXTRA_BLOCK_UNTIL, blockUntil)
         }
 
         assertEquals(packageName, intent.getStringExtra(BlockingOverlayActivity.EXTRA_PACKAGE_NAME))
-        assertEquals(blockUntil, intent.getLongExtra(BlockingOverlayActivity.EXTRA_BLOCK_UNTIL, 0))
     }
 
     @Test

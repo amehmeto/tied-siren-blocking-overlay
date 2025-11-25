@@ -15,5 +15,8 @@
     "react-native": "0.81.5",
     "@amehmeto/tied-siren-blocking-overlay": ".."
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "@types/react": "~19.1.10"
+  }
 }

@@ -15,7 +15,7 @@ class TiedSirenBlockingOverlayModule : Module() {
     override fun definition() = ModuleDefinition {
         Name("TiedSirenBlockingOverlay")
 
-        AsyncFunction("showOverlay") { packageName: String, blockUntil: Long ->
+        AsyncFunction("showOverlay") { packageName: String ->
             if (packageName.isBlank()) {
                 Log.e(TAG, "Invalid package name: empty or blank")
                 throw CodedException("ERR_INVALID_PACKAGE", "Package name cannot be empty", null)
@@ -30,14 +30,13 @@ class TiedSirenBlockingOverlayModule : Module() {
 
                 val intent = Intent(context, BlockingOverlayActivity::class.java).apply {
                     putExtra(BlockingOverlayActivity.EXTRA_PACKAGE_NAME, packageName)
-                    putExtra(BlockingOverlayActivity.EXTRA_BLOCK_UNTIL, blockUntil)
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                             Intent.FLAG_ACTIVITY_CLEAR_TASK or
                             Intent.FLAG_ACTIVITY_NO_HISTORY
                 }
 
                 context.startActivity(intent)
-                Log.d(TAG, "Overlay launched for package: $packageName, blockUntil: $blockUntil")
+                Log.d(TAG, "Overlay launched for package: $packageName")
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to launch overlay: ${e.message}", e)
                 throw CodedException("ERR_OVERLAY_LAUNCH", "Failed to launch overlay: ${e.message}", e)

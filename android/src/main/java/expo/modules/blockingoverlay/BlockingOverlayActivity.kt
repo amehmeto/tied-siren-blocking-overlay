@@ -9,7 +9,6 @@ class BlockingOverlayActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_PACKAGE_NAME = "packageName"
-        const val EXTRA_BLOCK_UNTIL = "blockUntil"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

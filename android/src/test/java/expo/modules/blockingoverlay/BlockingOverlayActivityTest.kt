@@ -25,7 +25,6 @@ class BlockingOverlayActivityTest {
     fun setUp() {
         val intent = Intent().apply {
             putExtra(BlockingOverlayActivity.EXTRA_PACKAGE_NAME, "com.example.blocked")
-            putExtra(BlockingOverlayActivity.EXTRA_BLOCK_UNTIL, System.currentTimeMillis() + 3600000)
         }
         activityController = Robolectric.buildActivity(BlockingOverlayActivity::class.java, intent)
     }
@@ -87,11 +86,9 @@ class BlockingOverlayActivityTest {
     @Test
     fun `intent extras should be accessible in activity`() {
         val packageName = "com.example.testblocked"
-        val blockUntil = 1700000000000L
 
         val intent = Intent().apply {
             putExtra(BlockingOverlayActivity.EXTRA_PACKAGE_NAME, packageName)
-            putExtra(BlockingOverlayActivity.EXTRA_BLOCK_UNTIL, blockUntil)
         }
 
         activityController = Robolectric.buildActivity(BlockingOverlayActivity::class.java, intent)
@@ -100,10 +97,6 @@ class BlockingOverlayActivityTest {
         assertEquals(
             packageName,
             activity.intent.getStringExtra(BlockingOverlayActivity.EXTRA_PACKAGE_NAME)
-        )
-        assertEquals(
-            blockUntil,
-            activity.intent.getLongExtra(BlockingOverlayActivity.EXTRA_BLOCK_UNTIL, 0)
         )
     }
 

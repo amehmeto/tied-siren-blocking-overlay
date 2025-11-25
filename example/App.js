@@ -24,9 +24,7 @@ export default function App() {
     setError(null)
 
     try {
-      // Block for 1 hour from now
-      const blockUntil = Date.now() + 60 * 60 * 1000
-      await showOverlay('com.example.blocked', blockUntil)
+      await showOverlay('com.example.blocked')
       setStatus('Overlay launched successfully!')
     } catch (err) {
       setError(err.message || 'Unknown error')
@@ -45,7 +43,7 @@ export default function App() {
     setError(null)
 
     try {
-      await showOverlay('', Date.now() + 3600000)
+      await showOverlay('')
       setStatus('Should have thrown error!')
     } catch (err) {
       if (err.code === 'ERR_INVALID_PACKAGE') {
