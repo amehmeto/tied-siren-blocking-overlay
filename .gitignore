@@ -7,9 +7,16 @@ build/
 *.d.ts
 *.map
 
+# Keep example JS files
+!example/**/*.js
+
 # Android build
 android/build/
 android/.gradle/
+
+# Example Android build
+example/android/
+example/ios/
 
 # IDE
 .idea/
