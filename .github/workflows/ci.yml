@@ -81,7 +81,7 @@ jobs:
 
       - name: Run Kotlin unit tests
         working-directory: ./example/android
-        run: ./gradlew :tied-siren-blocking-overlay:testDebugUnitTest
+        run: ./gradlew :amehmeto-tied-siren-blocking-overlay:testDebugUnitTest
 
       - name: Build example Android app
         working-directory: ./example/android
