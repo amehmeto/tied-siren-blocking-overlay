@@ -2,10 +2,6 @@
 node_modules/
 
 # Build output
-build/
-*.js
-*.d.ts
-*.map
 
 # Keep config and example JS files
 !jest.config.js
