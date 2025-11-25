@@ -10,7 +10,7 @@
     "lint": "expo-module lint",
     "lint:fix": "expo-module lint --fix",
     "test": "expo-module test",
-    "prepare": "husky",
+    "prepare": "expo-module prepare && husky",
     "prepublishOnly": "expo-module prepublishOnly",
     "expo-module": "expo-module"
   },
