@@ -1,0 +1,39 @@
+{
+  "name": "@anthropic/tied-siren-blocking-overlay",
+  "version": "0.1.0",
+  "description": "An Expo module that displays a fullscreen blocking overlay on Android for TiedSiren",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "scripts": {
+    "build": "expo-module build",
+    "clean": "expo-module clean",
+    "lint": "expo-module lint",
+    "test": "expo-module test",
+    "prepare": "expo-module prepare",
+    "prepublishOnly": "expo-module prepublishOnly",
+    "expo-module": "expo-module"
+  },
+  "keywords": [
+    "react-native",
+    "expo",
+    "tied-siren",
+    "blocking-overlay",
+    "android"
+  ],
+  "repository": "https://github.com/amehmeto/tied-siren-blocking-overlay",
+  "bugs": {
+    "url": "https://github.com/amehmeto/tied-siren-blocking-overlay/issues"
+  },
+  "author": "amehmeto",
+  "license": "MIT",
+  "homepage": "https://github.com/amehmeto/tied-siren-blocking-overlay#readme",
+  "devDependencies": {
+    "expo-module-scripts": "^4.0.0",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "expo": "*",
+    "react": "*",
+    "react-native": "*"
+  }
+}
