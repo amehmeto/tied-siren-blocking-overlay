@@ -9,9 +9,18 @@
     "clean": "expo-module clean",
     "lint": "expo-module lint",
     "test": "expo-module test",
-    "prepare": "expo-module prepare",
+    "prepare": "husky",
     "prepublishOnly": "expo-module prepublishOnly",
     "expo-module": "expo-module"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
   },
   "keywords": [
     "react-native",
@@ -29,6 +38,8 @@
   "homepage": "https://github.com/amehmeto/tied-siren-blocking-overlay#readme",
   "devDependencies": {
     "expo-module-scripts": "^4.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "typescript": "^5.3.3"
   },
   "peerDependencies": {
