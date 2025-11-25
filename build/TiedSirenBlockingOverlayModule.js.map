@@ -1,1 +1,0 @@
-{"version":3,"file":"TiedSirenBlockingOverlayModule.js","sourceRoot":"","sources":["../src/TiedSirenBlockingOverlayModule.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,mBAAmB,EAAE,MAAM,mBAAmB,CAAA;AAEvD,eAAe,mBAAmB,CAAC,0BAA0B,CAAC,CAAA","sourcesContent":["import { requireNativeModule } from 'expo-modules-core'\n\nexport default requireNativeModule('TiedSirenBlockingOverlay')\n"]}
