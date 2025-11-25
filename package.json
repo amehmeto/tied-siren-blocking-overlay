@@ -8,6 +8,7 @@
     "build": "expo-module build",
     "clean": "expo-module clean",
     "lint": "expo-module lint",
+    "lint:fix": "expo-module lint --fix",
     "test": "expo-module test",
     "prepare": "husky",
     "prepublishOnly": "expo-module prepublishOnly",
@@ -15,8 +16,7 @@
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
+      "npm run lint:fix --"
     ],
     "*.{json,md}": [
       "prettier --write"
@@ -37,9 +37,11 @@
   "license": "MIT",
   "homepage": "https://github.com/amehmeto/tied-siren-blocking-overlay#readme",
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "expo-module-scripts": "^4.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
+    "ts-jest": "^29.4.5",
     "typescript": "^5.3.3"
   },
   "peerDependencies": {

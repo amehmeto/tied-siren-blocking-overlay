@@ -33,7 +33,7 @@ jobs:
         run: npm run build
 
       - name: Run tests
-        run: npm test || echo "No tests configured yet"
+        run: npm test
 
   android:
     name: Android Build
@@ -74,6 +74,10 @@ jobs:
       - name: Install example dependencies
         working-directory: ./example
         run: npm ci
+
+      - name: Run Kotlin unit tests
+        working-directory: ./example/android
+        run: ./gradlew :tied-siren-blocking-overlay:testDebugUnitTest
 
       - name: Build example Android app
         working-directory: ./example/android

@@ -7,7 +7,10 @@ build/
 *.d.ts
 *.map
 
-# Keep example JS files
+# Keep config and example JS files
+!jest.config.js
+!jest.setup.js
+!eslint.config.js
 !example/**/*.js
 
 # Android build

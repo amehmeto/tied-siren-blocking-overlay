@@ -11,6 +11,9 @@ export * from './TiedSirenBlockingOverlay.types'
  * @throws ERR_INVALID_PACKAGE - If packageName is empty or invalid
  * @throws ERR_OVERLAY_LAUNCH - If the overlay activity fails to launch
  */
-export async function showOverlay(packageName: string, blockUntil: number): Promise<void> {
+export async function showOverlay(
+  packageName: string,
+  blockUntil: number,
+): Promise<void> {
   return TiedSirenBlockingOverlayModule.showOverlay(packageName, blockUntil)
 }
