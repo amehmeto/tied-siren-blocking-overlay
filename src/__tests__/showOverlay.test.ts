@@ -32,7 +32,9 @@ describe('showOverlay', () => {
     ;(error as any).code = 'ERR_INVALID_PACKAGE'
     mockShowOverlay.mockRejectedValueOnce(error)
 
-    await expect(showOverlay('')).rejects.toThrow('Package name cannot be empty')
+    await expect(showOverlay('')).rejects.toThrow(
+      'Package name cannot be empty',
+    )
   })
 
   it('should propagate ERR_OVERLAY_LAUNCH error from native module', async () => {
