@@ -1,5 +1,5 @@
 {
-  "name": "@anthropic/tied-siren-blocking-overlay",
+  "name": "@amehmeto/tied-siren-blocking-overlay",
   "version": "0.1.0",
   "description": "An Expo module that displays a fullscreen blocking overlay on Android for TiedSiren",
   "main": "build/index.js",

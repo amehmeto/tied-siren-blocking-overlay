@@ -8,7 +8,7 @@ import {
   Platform,
   Alert,
 } from 'react-native'
-import { showOverlay } from 'tied-siren-blocking-overlay'
+import { showOverlay } from '@amehmeto/tied-siren-blocking-overlay'
 
 export default function App() {
   const [status, setStatus] = useState('Ready')

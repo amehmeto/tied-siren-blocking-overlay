@@ -13,5 +13,5 @@ if [ ! -d "example/android" ] || [ ! -f "example/android/gradlew" ]; then
   exit 1
 fi
 echo "Running Kotlin unit tests..."
-cd example/android && ./gradlew :tied-siren-blocking-overlay:testDebugUnitTest || exit 1
+cd example/android && ./gradlew :amehmeto-tied-siren-blocking-overlay:testDebugUnitTest || exit 1
 cd ../..
