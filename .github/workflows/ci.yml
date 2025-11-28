@@ -86,3 +86,28 @@ jobs:
       - name: Build example Android app
         working-directory: ./example/android
         run: ./gradlew assembleDebug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: example-app-debug
+          path: example/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+
+      - name: Create PR release
+        if: github.event_name == 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: pr-${{ github.event.pull_request.number }}-${{ github.sha }}
+          name: "PR #${{ github.event.pull_request.number }} - Example App (commit ${{ github.sha }})"
+          body: |
+            Automated release of the example app for PR #${{ github.event.pull_request.number }}.
+
+            **Commit:** ${{ github.sha }}
+            **Branch:** ${{ github.head_ref }}
+
+            Download the APK below to test the changes.
+          files: example/android/app/build/outputs/apk/debug/app-debug.apk
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
