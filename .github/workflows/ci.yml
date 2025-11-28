@@ -102,9 +102,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: pr-${{ github.event.pull_request.number }}-${{ github.sha }}
-          name: "PR #${{ github.event.pull_request.number }} - Example App (commit ${{ github.sha }})"
+          name: "Blocking Overlay Example APK - PR #${{ github.event.pull_request.number }}"
           body: |
-            Automated release of the example app for PR #${{ github.event.pull_request.number }}.
+            Automated build of the **Blocking Overlay** example app for PR #${{ github.event.pull_request.number }}.
 
             **Commit:** ${{ github.sha }}
             **Branch:** ${{ github.head_ref }}
