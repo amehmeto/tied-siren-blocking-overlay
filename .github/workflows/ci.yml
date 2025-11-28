@@ -86,20 +86,20 @@ jobs:
         working-directory: ./example/android
         run: ./gradlew :amehmeto-tied-siren-blocking-overlay:testDebugUnitTest
 
-      - name: Build example Android app
+      - name: Build example Android app (release)
         working-directory: ./example/android
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleRelease
 
       - name: Rename APK
         run: |
-          mv example/android/app/build/outputs/apk/debug/app-debug.apk \
-             example/android/app/build/outputs/apk/debug/blocking-overlay-example.apk
+          mv example/android/app/build/outputs/apk/release/app-release.apk \
+             example/android/app/build/outputs/apk/release/tied-siren-blocking-overlay.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: blocking-overlay-example
-          path: example/android/app/build/outputs/apk/debug/blocking-overlay-example.apk
+          name: tied-siren-blocking-overlay
+          path: example/android/app/build/outputs/apk/release/tied-siren-blocking-overlay.apk
           retention-days: 30
 
       - name: Create PR release
@@ -115,7 +115,7 @@ jobs:
             **Branch:** ${{ github.head_ref }}
 
             Download the APK below to test the changes.
-          files: example/android/app/build/outputs/apk/debug/blocking-overlay-example.apk
+          files: example/android/app/build/outputs/apk/release/tied-siren-blocking-overlay.apk
           prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
