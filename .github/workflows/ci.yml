@@ -90,11 +90,16 @@ jobs:
         working-directory: ./example/android
         run: ./gradlew assembleDebug
 
+      - name: Rename APK
+        run: |
+          mv example/android/app/build/outputs/apk/debug/app-debug.apk \
+             example/android/app/build/outputs/apk/debug/blocking-overlay-example.apk
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: example-app-debug
-          path: example/android/app/build/outputs/apk/debug/app-debug.apk
+          name: blocking-overlay-example
+          path: example/android/app/build/outputs/apk/debug/blocking-overlay-example.apk
           retention-days: 30
 
       - name: Create PR release
@@ -110,7 +115,7 @@ jobs:
             **Branch:** ${{ github.head_ref }}
 
             Download the APK below to test the changes.
-          files: example/android/app/build/outputs/apk/debug/app-debug.apk
+          files: example/android/app/build/outputs/apk/debug/blocking-overlay-example.apk
           prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
