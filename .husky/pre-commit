@@ -1,5 +1,5 @@
-# TypeScript/JavaScript linting
-npm run lint
+# Run lint-staged on staged files
+npx lint-staged
 
 # Kotlin linting (if ktlint is available)
 if command -v ktlint &> /dev/null; then
