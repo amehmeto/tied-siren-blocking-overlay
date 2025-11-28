@@ -1,3 +1,6 @@
+# Block direct push to main/master
+sh .husky/scripts/no-direct-push-main-master.sh
+
 # Run TypeScript unit tests
 npm test
 
