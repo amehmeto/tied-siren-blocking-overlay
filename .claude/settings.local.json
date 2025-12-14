@@ -36,7 +36,7 @@
       "WebFetch(domain:stackoverflow.com)",
       "WebSearch"
     ],
-    "deny": [],
+    "deny": ["mcp__github__merge_pull_request"],
     "ask": []
   }
 }
