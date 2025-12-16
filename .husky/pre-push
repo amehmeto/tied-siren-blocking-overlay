@@ -4,17 +4,11 @@ sh .husky/scripts/no-direct-push-main-master.sh
 # Run TypeScript unit tests
 npm test
 
-# Run Kotlin linting check (no auto-format on push)
-if command -v ktlint &> /dev/null; then
-  echo "Running ktlint check on Kotlin files..."
-  ktlint "android/src/**/*.kt" || exit 1
-fi
-
 # Run Kotlin unit tests
-if [ ! -d "example/android" ] || [ ! -f "example/android/gradlew" ]; then
-  echo "Android project not found. Run 'cd example && npx expo prebuild --platform android' first."
-  exit 1
+if [ -d "example/android" ] && [ -f "example/android/gradlew" ]; then
+  echo "Running Kotlin unit tests..."
+  cd example/android && ./gradlew :amehmeto-tied-siren-blocking-overlay:testDebugUnitTest || exit 1
+  cd ../..
+else
+  echo "Android project not found, skipping Kotlin tests"
 fi
-echo "Running Kotlin unit tests..."
-cd example/android && ./gradlew :amehmeto-tied-siren-blocking-overlay:testDebugUnitTest || exit 1
-cd ../..

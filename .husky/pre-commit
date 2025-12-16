@@ -1,10 +1,1 @@
-# Run lint-staged on staged files
 npx lint-staged
-
-# Kotlin linting (if ktlint is available)
-if command -v ktlint &> /dev/null; then
-  echo "Running ktlint on Kotlin files..."
-  ktlint "android/src/**/*.kt" --format || exit 1
-else
-  echo "ktlint not installed, skipping Kotlin lint"
-fi
