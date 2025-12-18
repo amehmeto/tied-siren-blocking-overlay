@@ -33,6 +33,9 @@ class BlockedAppsStorageTest {
     fun setUp() {
         MockitoAnnotations.openMocks(this)
 
+        // Invalidate cache before each test to ensure clean state
+        BlockedAppsStorage.invalidateCache()
+
         `when`(mockContext.getSharedPreferences(eq(BlockedAppsStorage.PREFS_NAME), eq(Context.MODE_PRIVATE)))
             .thenReturn(mockSharedPreferences)
         `when`(mockSharedPreferences.edit()).thenReturn(mockEditor)
@@ -107,5 +110,42 @@ class BlockedAppsStorageTest {
 
         verify(mockEditor).putStringSet(BlockedAppsStorage.KEY_BLOCKED_APPS, emptyApps)
         verify(mockEditor).apply()
+    }
+
+    @Test
+    fun `invalidateCache should clear cached data`() {
+        val storedApps = setOf("com.test.app")
+        `when`(mockSharedPreferences.getStringSet(BlockedAppsStorage.KEY_BLOCKED_APPS, emptySet()))
+            .thenReturn(storedApps)
+
+        // First call populates cache
+        BlockedAppsStorage.getBlockedApps(mockContext)
+
+        // Invalidate cache
+        BlockedAppsStorage.invalidateCache()
+
+        // Update mock to return different data
+        val newApps = setOf("com.new.app")
+        `when`(mockSharedPreferences.getStringSet(BlockedAppsStorage.KEY_BLOCKED_APPS, emptySet()))
+            .thenReturn(newApps)
+
+        // After invalidation, should read from SharedPreferences again
+        val result = BlockedAppsStorage.getBlockedApps(mockContext)
+
+        assertEquals(newApps, result)
+    }
+
+    @Test
+    fun `getBlockedApps should use cache on subsequent calls`() {
+        val storedApps = setOf("com.cached.app")
+        `when`(mockSharedPreferences.getStringSet(BlockedAppsStorage.KEY_BLOCKED_APPS, emptySet()))
+            .thenReturn(storedApps)
+
+        // First call
+        val result1 = BlockedAppsStorage.getBlockedApps(mockContext)
+        // Second call should use cache
+        val result2 = BlockedAppsStorage.getBlockedApps(mockContext)
+
+        assertEquals(result1, result2)
     }
 }
