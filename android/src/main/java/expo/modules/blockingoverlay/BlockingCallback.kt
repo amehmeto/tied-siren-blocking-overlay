@@ -16,9 +16,19 @@ class BlockingCallback : ForegroundServiceCallback, MyAccessibilityService.Event
 
     companion object {
         private const val TAG = "BlockingCallback"
+        // Debounce interval to prevent rapid overlay launches (in milliseconds)
+        private const val DEBOUNCE_INTERVAL_MS = 500L
     }
 
+    // Volatile for thread safety - accessed from service thread and accessibility thread
+    @Volatile
     private var applicationContext: Context? = null
+
+    // Debouncing: track last overlay launch time and package
+    @Volatile
+    private var lastOverlayLaunchTime: Long = 0L
+    @Volatile
+    private var lastOverlayPackage: String? = null
 
     // ========== ForegroundServiceCallback ==========
 
@@ -41,6 +51,8 @@ class BlockingCallback : ForegroundServiceCallback, MyAccessibilityService.Event
         Log.d(TAG, "Accessibility listener removal: $removed")
 
         applicationContext = null
+        lastOverlayLaunchTime = 0L
+        lastOverlayPackage = null
     }
 
     // ========== MyAccessibilityService.EventListener ==========
@@ -55,6 +67,14 @@ class BlockingCallback : ForegroundServiceCallback, MyAccessibilityService.Event
         val blockedApps = BlockedAppsStorage.getBlockedApps(context)
 
         if (blockedApps.contains(packageName)) {
+            // Debounce: skip if same package was blocked recently
+            val now = System.currentTimeMillis()
+            if (packageName == lastOverlayPackage &&
+                (now - lastOverlayLaunchTime) < DEBOUNCE_INTERVAL_MS) {
+                Log.d(TAG, "Debouncing overlay launch for: $packageName")
+                return
+            }
+
             Log.i(TAG, "BLOCKED app detected: $packageName - launching overlay")
             launchOverlay(context, packageName)
         } else {
@@ -73,6 +93,11 @@ class BlockingCallback : ForegroundServiceCallback, MyAccessibilityService.Event
                         Intent.FLAG_ACTIVITY_NO_HISTORY
             }
             context.startActivity(intent)
+
+            // Update debounce tracking
+            lastOverlayLaunchTime = System.currentTimeMillis()
+            lastOverlayPackage = packageName
+
             Log.d(TAG, "Overlay launched for: $packageName")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to launch overlay: ${e.message}", e)
