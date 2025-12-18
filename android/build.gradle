@@ -49,6 +49,11 @@ dependencies {
   implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
   implementation 'androidx.appcompat:appcompat:1.6.1'
 
+  // Required for implementing interfaces from other modules
+  // compileOnly means compile against interfaces but don't bundle them (provided at runtime by app)
+  compileOnly project(':expo-accessibility-service')
+  compileOnly project(':expo-foreground-service')
+
   // Unit testing
   testImplementation 'junit:junit:4.13.2'
   testImplementation 'org.mockito:mockito-core:5.8.0'
@@ -56,4 +61,8 @@ dependencies {
   testImplementation 'org.robolectric:robolectric:4.11.1'
   testImplementation 'androidx.test:core:1.5.0'
   testImplementation 'androidx.test.ext:junit:1.1.5'
+
+  // Test dependencies for interface verification
+  testImplementation project(':expo-accessibility-service')
+  testImplementation project(':expo-foreground-service')
 }
