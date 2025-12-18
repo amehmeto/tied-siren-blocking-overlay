@@ -50,15 +50,17 @@ android {
   // Exclude BlockingCallback files when interface dependencies aren't available
   // (e.g., in standalone CI builds). These files require expo-accessibility-service
   // and expo-foreground-service which are only present in the main app context.
-  if (!hasInterfaceDependencies) {
-    sourceSets {
-      main {
-        java {
+  sourceSets {
+    main {
+      java {
+        if (!hasInterfaceDependencies) {
           exclude '**/BlockingCallback.kt'
         }
       }
-      test {
-        java {
+    }
+    test {
+      java {
+        if (!hasInterfaceDependencies) {
           exclude '**/BlockingCallbackTest.kt'
         }
       }
