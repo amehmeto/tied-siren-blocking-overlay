@@ -42,5 +42,28 @@ class TiedSirenBlockingOverlayModule : Module() {
                 throw CodedException("ERR_OVERLAY_LAUNCH", "Failed to launch overlay: ${e.message}", e)
             }
         }
+
+        AsyncFunction("setBlockedApps") { packageNames: List<String> ->
+            val context = appContext.reactContext
+                ?: throw CodedException("ERR_NO_CONTEXT", "Context not available", null)
+
+            BlockedAppsStorage.setBlockedApps(context, packageNames.toSet())
+            Log.d(TAG, "setBlockedApps: ${packageNames.size} apps")
+        }
+
+        AsyncFunction("getBlockedApps") {
+            val context = appContext.reactContext
+                ?: throw CodedException("ERR_NO_CONTEXT", "Context not available", null)
+
+            BlockedAppsStorage.getBlockedApps(context).toList()
+        }
+
+        AsyncFunction("clearBlockedApps") {
+            val context = appContext.reactContext
+                ?: throw CodedException("ERR_NO_CONTEXT", "Context not available", null)
+
+            BlockedAppsStorage.clearBlockedApps(context)
+            Log.d(TAG, "clearBlockedApps called")
+        }
     }
 }
