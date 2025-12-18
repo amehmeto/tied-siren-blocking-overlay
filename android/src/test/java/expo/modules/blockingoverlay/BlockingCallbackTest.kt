@@ -232,4 +232,48 @@ class BlockingCallbackTest {
             intent.getStringExtra(BlockingOverlayActivity.EXTRA_PACKAGE_NAME)
         )
     }
+
+    @Test
+    fun `rapid calls for same package should be debounced`() {
+        val callback = BlockingCallback()
+        val testPackage = "com.debounce.test"
+
+        `when`(mockSharedPreferences.getStringSet(BlockedAppsStorage.KEY_BLOCKED_APPS, emptySet()))
+            .thenReturn(setOf(testPackage))
+
+        callback.onServiceStarted(mockContext)
+
+        // First call should launch overlay
+        callback.onAppChanged(testPackage, "MainActivity", System.currentTimeMillis())
+
+        // Rapid second call (within 500ms debounce window) should be ignored
+        callback.onAppChanged(testPackage, "MainActivity", System.currentTimeMillis())
+
+        // Rapid third call should also be ignored
+        callback.onAppChanged(testPackage, "MainActivity", System.currentTimeMillis())
+
+        // Verify startActivity was called only ONCE despite 3 calls
+        verify(mockApplicationContext, org.mockito.Mockito.times(1)).startActivity(any())
+    }
+
+    @Test
+    fun `different packages should not be debounced`() {
+        val callback = BlockingCallback()
+        val package1 = "com.first.app"
+        val package2 = "com.second.app"
+
+        `when`(mockSharedPreferences.getStringSet(BlockedAppsStorage.KEY_BLOCKED_APPS, emptySet()))
+            .thenReturn(setOf(package1, package2))
+
+        callback.onServiceStarted(mockContext)
+
+        // First package
+        callback.onAppChanged(package1, "MainActivity", System.currentTimeMillis())
+
+        // Different package should NOT be debounced
+        callback.onAppChanged(package2, "MainActivity", System.currentTimeMillis())
+
+        // Verify startActivity was called TWICE (once per package)
+        verify(mockApplicationContext, org.mockito.Mockito.times(2)).startActivity(any())
+    }
 }

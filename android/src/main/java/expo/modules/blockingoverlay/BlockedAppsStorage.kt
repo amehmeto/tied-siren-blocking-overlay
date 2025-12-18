@@ -9,6 +9,12 @@ import android.util.Log
  *
  * Includes in-memory caching to reduce SharedPreferences reads during frequent
  * accessibility event checks.
+ *
+ * **Cache Behavior Note:**
+ * The cache is updated when [setBlockedApps] or [clearBlockedApps] is called from this process.
+ * If SharedPreferences is modified externally (e.g., another process or direct file edit),
+ * the cache will not reflect those changes until [invalidateCache] is called explicitly.
+ * For this app's use case (single-process blocking), this is acceptable.
  */
 object BlockedAppsStorage {
 
@@ -35,14 +41,19 @@ object BlockedAppsStorage {
 
     fun getBlockedApps(context: Context): Set<String> {
         // Return cached value if available
-        cachedBlockedApps?.let { return it }
+        cachedBlockedApps?.let {
+            Log.v(TAG, "Returning ${it.size} blocked apps from cache")
+            return it
+        }
 
+        Log.d(TAG, "Cache miss - reading blocked apps from SharedPreferences")
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         // Create a defensive copy to avoid mutation issues with SharedPreferences' internal set
         val apps = HashSet(prefs.getStringSet(KEY_BLOCKED_APPS, emptySet()) ?: emptySet())
 
         // Update cache
         cachedBlockedApps = apps
+        Log.d(TAG, "Loaded ${apps.size} blocked apps from disk")
 
         return apps
     }
