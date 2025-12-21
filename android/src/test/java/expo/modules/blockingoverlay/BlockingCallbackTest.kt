@@ -3,7 +3,7 @@ package expo.modules.blockingoverlay
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import expo.modules.accessibilityservice.MyAccessibilityService
+import expo.modules.accessibilityservice.AccessibilityService
 import expo.modules.foregroundservice.ForegroundServiceCallback
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -83,12 +83,12 @@ class BlockingCallbackTest {
     }
 
     @Test
-    fun `implements MyAccessibilityService EventListener interface`() {
+    fun `implements AccessibilityService EventListener interface`() {
         val callback = BlockingCallback()
 
         assertTrue(
-            "BlockingCallback must implement MyAccessibilityService.EventListener",
-            callback is MyAccessibilityService.EventListener
+            "BlockingCallback must implement AccessibilityService.EventListener",
+            callback is AccessibilityService.EventListener
         )
     }
 
@@ -108,7 +108,7 @@ class BlockingCallbackTest {
     @Test
     fun `EventListener interface has correct methods`() {
         val callback = BlockingCallback()
-        val elInterface = MyAccessibilityService.EventListener::class.java
+        val elInterface = AccessibilityService.EventListener::class.java
 
         // Verify interface methods exist
         val onAppChanged = elInterface.getMethod(
