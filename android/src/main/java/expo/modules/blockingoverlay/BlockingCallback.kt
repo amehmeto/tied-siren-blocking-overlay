@@ -3,7 +3,7 @@ package expo.modules.blockingoverlay
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import expo.modules.accessibilityservice.MyAccessibilityService
+import expo.modules.accessibilityservice.AccessibilityService
 import expo.modules.foregroundservice.ForegroundServiceCallback
 
 /**
@@ -12,7 +12,7 @@ import expo.modules.foregroundservice.ForegroundServiceCallback
  *
  * IMPORTANT: Must have public no-arg constructor for reflection.
  */
-class BlockingCallback : ForegroundServiceCallback, MyAccessibilityService.EventListener {
+class BlockingCallback : ForegroundServiceCallback, AccessibilityService.EventListener {
 
     companion object {
         private const val TAG = "BlockingCallback"
@@ -36,7 +36,7 @@ class BlockingCallback : ForegroundServiceCallback, MyAccessibilityService.Event
         applicationContext = context.applicationContext
         Log.d(TAG, "Service started, registering as accessibility listener")
 
-        val registered = MyAccessibilityService.addEventListener(this)
+        val registered = AccessibilityService.addEventListener(this)
         Log.d(TAG, "Accessibility listener registration: $registered")
 
         // Log current blocked apps for debugging
@@ -47,7 +47,7 @@ class BlockingCallback : ForegroundServiceCallback, MyAccessibilityService.Event
     override fun onServiceStopped() {
         Log.d(TAG, "Service stopping, unregistering accessibility listener")
 
-        val removed = MyAccessibilityService.removeEventListener(this)
+        val removed = AccessibilityService.removeEventListener(this)
         Log.d(TAG, "Accessibility listener removal: $removed")
 
         applicationContext = null
@@ -55,7 +55,7 @@ class BlockingCallback : ForegroundServiceCallback, MyAccessibilityService.Event
         lastOverlayPackage = null
     }
 
-    // ========== MyAccessibilityService.EventListener ==========
+    // ========== AccessibilityService.EventListener ==========
 
     override fun onAppChanged(packageName: String, className: String, timestamp: Long) {
         val context = applicationContext
