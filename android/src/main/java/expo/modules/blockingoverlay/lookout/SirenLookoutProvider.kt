@@ -9,11 +9,28 @@ package expo.modules.blockingoverlay.lookout
  */
 object SirenLookoutProvider {
 
+    private var _appLookout: AppLookout? = null
+
     /**
      * App lookout implementation.
      * Must be set before use - typically set during module initialization.
+     * @throws IllegalStateException if accessed before being set
      */
-    var appLookout: AppLookout? = null
+    var appLookout: AppLookout
+        get() = _appLookout
+            ?: throw IllegalStateException(
+                "AppLookout not initialized. Call SirenLookoutProvider.appLookout = <implementation> " +
+                "during module initialization before accessing."
+            )
+        set(value) {
+            _appLookout = value
+        }
+
+    /**
+     * Check if appLookout has been initialized.
+     */
+    val isAppLookoutInitialized: Boolean
+        get() = _appLookout != null
 
     /**
      * Website lookout implementation.
@@ -32,7 +49,7 @@ object SirenLookoutProvider {
      * Useful for testing.
      */
     fun reset() {
-        appLookout = null
+        _appLookout = null
         websiteLookout = NoopWebsiteLookout()
         keywordLookout = NoopKeywordLookout()
     }

@@ -1,8 +1,9 @@
 package expo.modules.blockingoverlay.tier
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -19,8 +20,19 @@ class SirenTierProviderTest {
     }
 
     @Test
-    fun `appTier should be null by default`() {
-        assertNull(SirenTierProvider.appTier)
+    fun `appTier should not be initialized by default`() {
+        assertFalse(SirenTierProvider.isAppTierInitialized)
+    }
+
+    @Test
+    fun `appTier should throw IllegalStateException when accessed before initialization`() {
+        try {
+            SirenTierProvider.appTier
+            fail("Expected IllegalStateException")
+        } catch (e: IllegalStateException) {
+            assertTrue(e.message!!.contains("AppTier not initialized"))
+            assertTrue(e.message!!.contains("SirenTierProvider.appTier"))
+        }
     }
 
     @Test
@@ -49,9 +61,21 @@ class SirenTierProviderTest {
         SirenTierProvider.reset()
 
         // Verify defaults
-        assertNull(SirenTierProvider.appTier)
+        assertFalse(SirenTierProvider.isAppTierInitialized)
         assertTrue(SirenTierProvider.websiteTier is NoopWebsiteTier)
         assertTrue(SirenTierProvider.keywordTier is NoopKeywordTier)
+    }
+
+    @Test
+    fun `isAppTierInitialized should return true after setting appTier`() {
+        assertFalse(SirenTierProvider.isAppTierInitialized)
+
+        SirenTierProvider.appTier = object : AppTier {
+            override suspend fun block(packages: List<String>) {}
+            override suspend fun unblockAll() {}
+        }
+
+        assertTrue(SirenTierProvider.isAppTierInitialized)
     }
 
     @Test

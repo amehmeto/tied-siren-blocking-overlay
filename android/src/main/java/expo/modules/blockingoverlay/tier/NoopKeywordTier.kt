@@ -13,9 +13,7 @@ class NoopKeywordTier : KeywordTier {
     }
 
     override suspend fun block(keywords: List<String>) {
-        if (keywords.isNotEmpty()) {
-            Log.d(TAG, "block() called with ${keywords.size} keywords (no-op)")
-        }
+        Log.d(TAG, "block() called with ${keywords.size} keywords (no-op)")
     }
 
     override suspend fun unblockAll() {

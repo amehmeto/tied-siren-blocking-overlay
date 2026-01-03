@@ -13,9 +13,7 @@ class NoopWebsiteTier : WebsiteTier {
     }
 
     override suspend fun block(domains: List<String>) {
-        if (domains.isNotEmpty()) {
-            Log.d(TAG, "block() called with ${domains.size} domains (no-op)")
-        }
+        Log.d(TAG, "block() called with ${domains.size} domains (no-op)")
     }
 
     override suspend fun unblockAll() {

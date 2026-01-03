@@ -34,7 +34,8 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:docs.expo.dev)",
       "WebFetch(domain:stackoverflow.com)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

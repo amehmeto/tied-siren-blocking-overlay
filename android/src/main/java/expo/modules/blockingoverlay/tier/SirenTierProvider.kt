@@ -9,11 +9,28 @@ package expo.modules.blockingoverlay.tier
  */
 object SirenTierProvider {
 
+    private var _appTier: AppTier? = null
+
     /**
      * App tier implementation.
      * Must be set before use - typically set during module initialization.
+     * @throws IllegalStateException if accessed before being set
      */
-    var appTier: AppTier? = null
+    var appTier: AppTier
+        get() = _appTier
+            ?: throw IllegalStateException(
+                "AppTier not initialized. Call SirenTierProvider.appTier = <implementation> " +
+                "during module initialization before accessing."
+            )
+        set(value) {
+            _appTier = value
+        }
+
+    /**
+     * Check if appTier has been initialized.
+     */
+    val isAppTierInitialized: Boolean
+        get() = _appTier != null
 
     /**
      * Website tier implementation.
@@ -32,7 +49,7 @@ object SirenTierProvider {
      * Useful for testing.
      */
     fun reset() {
-        appTier = null
+        _appTier = null
         websiteTier = NoopWebsiteTier()
         keywordTier = NoopKeywordTier()
     }

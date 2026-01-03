@@ -1,8 +1,9 @@
 package expo.modules.blockingoverlay.lookout
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -19,8 +20,19 @@ class SirenLookoutProviderTest {
     }
 
     @Test
-    fun `appLookout should be null by default`() {
-        assertNull(SirenLookoutProvider.appLookout)
+    fun `appLookout should not be initialized by default`() {
+        assertFalse(SirenLookoutProvider.isAppLookoutInitialized)
+    }
+
+    @Test
+    fun `appLookout should throw IllegalStateException when accessed before initialization`() {
+        try {
+            SirenLookoutProvider.appLookout
+            fail("Expected IllegalStateException")
+        } catch (e: IllegalStateException) {
+            assertTrue(e.message!!.contains("AppLookout not initialized"))
+            assertTrue(e.message!!.contains("SirenLookoutProvider.appLookout"))
+        }
     }
 
     @Test
@@ -51,9 +63,22 @@ class SirenLookoutProviderTest {
         SirenLookoutProvider.reset()
 
         // Verify defaults
-        assertNull(SirenLookoutProvider.appLookout)
+        assertFalse(SirenLookoutProvider.isAppLookoutInitialized)
         assertTrue(SirenLookoutProvider.websiteLookout is NoopWebsiteLookout)
         assertTrue(SirenLookoutProvider.keywordLookout is NoopKeywordLookout)
+    }
+
+    @Test
+    fun `isAppLookoutInitialized should return true after setting appLookout`() {
+        assertFalse(SirenLookoutProvider.isAppLookoutInitialized)
+
+        SirenLookoutProvider.appLookout = object : AppLookout {
+            override fun startWatching() {}
+            override fun stopWatching() {}
+            override fun setOnAppDetectedListener(listener: AppLookout.OnAppDetectedListener?) {}
+        }
+
+        assertTrue(SirenLookoutProvider.isAppLookoutInitialized)
     }
 
     @Test
