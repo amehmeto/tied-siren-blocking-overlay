@@ -1,15 +1,10 @@
 package expo.modules.blockingoverlay
 
 import android.content.Context
-import android.content.SharedPreferences
+import androidx.test.core.app.ApplicationProvider
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mock
-import org.mockito.MockitoAnnotations
-import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.whenever
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.time.LocalTime
@@ -19,29 +14,18 @@ import org.junit.Assert.*
 @Config(sdk = [34], manifest = Config.NONE)
 class BlockingSchedulerTest {
 
-    @Mock
-    private lateinit var mockContext: Context
-
-    @Mock
-    private lateinit var mockPrefs: SharedPreferences
-
-    @Mock
-    private lateinit var mockEditor: SharedPreferences.Editor
-
+    private lateinit var context: Context
     private lateinit var scheduler: BlockingScheduler
 
     @Before
     fun setUp() {
-        MockitoAnnotations.openMocks(this)
+        context = ApplicationProvider.getApplicationContext()
         BlockingScheduleStorage.invalidateCache()
+        BlockedAppsStorage.invalidateCache()
+        BlockingScheduleStorage.clearSchedule(context)
+        BlockedAppsStorage.clearBlockedApps(context)
 
-        whenever(mockContext.getSharedPreferences(any(), eq(Context.MODE_PRIVATE)))
-            .thenReturn(mockPrefs)
-        whenever(mockPrefs.edit()).thenReturn(mockEditor)
-        whenever(mockEditor.putString(any(), any())).thenReturn(mockEditor)
-        whenever(mockEditor.remove(any())).thenReturn(mockEditor)
-
-        scheduler = BlockingScheduler(mockContext)
+        scheduler = BlockingScheduler(context)
     }
 
     // ========== Schedule Management Tests ==========
