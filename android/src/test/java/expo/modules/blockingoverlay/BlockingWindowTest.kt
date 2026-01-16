@@ -2,6 +2,7 @@ package expo.modules.blockingoverlay
 
 import org.junit.Test
 import org.junit.Assert.*
+import java.time.LocalTime
 
 class BlockingWindowTest {
 
@@ -148,5 +149,127 @@ class BlockingWindowTest {
 
         assertEquals("window-2", window2.id)
         assertEquals(window1.startTime, window2.startTime)
+    }
+
+    // ========== isActiveAt Tests ==========
+
+    @Test
+    fun `isActiveAt should return true within normal window`() {
+        val window = BlockingWindow(
+            id = "work-hours",
+            startTime = "09:00",
+            endTime = "17:00",
+            packageNames = emptyList()
+        )
+
+        assertTrue(window.isActiveAt(LocalTime.of(12, 0)))
+        assertTrue(window.isActiveAt(LocalTime.of(14, 30)))
+    }
+
+    @Test
+    fun `isActiveAt should return true at exact start time`() {
+        val window = BlockingWindow(
+            id = "exact-start",
+            startTime = "09:00",
+            endTime = "17:00",
+            packageNames = emptyList()
+        )
+
+        assertTrue(window.isActiveAt(LocalTime.of(9, 0)))
+    }
+
+    @Test
+    fun `isActiveAt should return true at exact end time - inclusive`() {
+        val window = BlockingWindow(
+            id = "exact-end",
+            startTime = "09:00",
+            endTime = "17:00",
+            packageNames = emptyList()
+        )
+
+        assertTrue(window.isActiveAt(LocalTime.of(17, 0)))
+    }
+
+    @Test
+    fun `isActiveAt should return false outside window`() {
+        val window = BlockingWindow(
+            id = "work-hours",
+            startTime = "09:00",
+            endTime = "17:00",
+            packageNames = emptyList()
+        )
+
+        assertFalse(window.isActiveAt(LocalTime.of(8, 59)))
+        assertFalse(window.isActiveAt(LocalTime.of(17, 1)))
+        assertFalse(window.isActiveAt(LocalTime.of(20, 0)))
+    }
+
+    @Test
+    fun `isActiveAt should handle overnight window before midnight`() {
+        val window = BlockingWindow(
+            id = "overnight",
+            startTime = "22:00",
+            endTime = "06:00",
+            packageNames = emptyList()
+        )
+
+        assertTrue(window.isActiveAt(LocalTime.of(22, 0)))
+        assertTrue(window.isActiveAt(LocalTime.of(23, 30)))
+    }
+
+    @Test
+    fun `isActiveAt should handle overnight window after midnight`() {
+        val window = BlockingWindow(
+            id = "overnight",
+            startTime = "22:00",
+            endTime = "06:00",
+            packageNames = emptyList()
+        )
+
+        assertTrue(window.isActiveAt(LocalTime.MIDNIGHT))
+        assertTrue(window.isActiveAt(LocalTime.of(3, 0)))
+        assertTrue(window.isActiveAt(LocalTime.of(6, 0))) // inclusive
+    }
+
+    @Test
+    fun `isActiveAt should return false during daytime for overnight window`() {
+        val window = BlockingWindow(
+            id = "overnight",
+            startTime = "22:00",
+            endTime = "06:00",
+            packageNames = emptyList()
+        )
+
+        assertFalse(window.isActiveAt(LocalTime.of(6, 1)))
+        assertFalse(window.isActiveAt(LocalTime.of(12, 0)))
+        assertFalse(window.isActiveAt(LocalTime.of(21, 59)))
+    }
+
+    @Test
+    fun `isActiveAt should handle full day window`() {
+        val window = BlockingWindow(
+            id = "all-day",
+            startTime = "00:00",
+            endTime = "23:59",
+            packageNames = emptyList()
+        )
+
+        assertTrue(window.isActiveAt(LocalTime.MIDNIGHT))
+        assertTrue(window.isActiveAt(LocalTime.of(12, 0)))
+        assertTrue(window.isActiveAt(LocalTime.of(23, 59)))
+    }
+
+    @Test
+    fun `isActiveAt should handle one minute window`() {
+        val window = BlockingWindow(
+            id = "quick",
+            startTime = "12:00",
+            endTime = "12:00",
+            packageNames = emptyList()
+        )
+
+        assertTrue(window.isActiveAt(LocalTime.of(12, 0)))
+        assertFalse(window.isActiveAt(LocalTime.of(11, 59)))
+        assertFalse(window.isActiveAt(LocalTime.of(12, 1)))
     }
 }

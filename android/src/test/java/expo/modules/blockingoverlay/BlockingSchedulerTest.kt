@@ -166,7 +166,7 @@ class BlockingSchedulerTest {
     }
 
     @Test
-    fun `getActiveBlockedPackagesAt should exclude packages at exact end time`() {
+    fun `getActiveBlockedPackagesAt should include packages at exact end time - inclusive`() {
         val windows = listOf(
             BlockingWindow(
                 id = "exact-end",
@@ -178,6 +178,24 @@ class BlockingSchedulerTest {
 
         scheduler.setSchedule(windows)
         val result = scheduler.getActiveBlockedPackagesAt(LocalTime.of(17, 0))
+
+        assertEquals(1, result.size)
+        assertTrue(result.contains("com.example.app"))
+    }
+
+    @Test
+    fun `getActiveBlockedPackagesAt should exclude packages after end time`() {
+        val windows = listOf(
+            BlockingWindow(
+                id = "exact-end",
+                startTime = "09:00",
+                endTime = "17:00",
+                packageNames = listOf("com.example.app")
+            )
+        )
+
+        scheduler.setSchedule(windows)
+        val result = scheduler.getActiveBlockedPackagesAt(LocalTime.of(17, 1))
 
         assertTrue(result.isEmpty())
     }
@@ -202,6 +220,10 @@ class BlockingSchedulerTest {
         // After midnight
         val afterMidnight = scheduler.getActiveBlockedPackagesAt(LocalTime.of(3, 0))
         assertTrue(afterMidnight.contains("com.night.app"))
+
+        // At end time (inclusive)
+        val atEndTime = scheduler.getActiveBlockedPackagesAt(LocalTime.of(6, 0))
+        assertTrue(atEndTime.contains("com.night.app"))
 
         // Outside overnight window (daytime)
         val daytime = scheduler.getActiveBlockedPackagesAt(LocalTime.of(12, 0))
@@ -299,6 +321,79 @@ class BlockingSchedulerTest {
         assertFalse(scheduler.isPackageBlocked("com.allowed.app"))
     }
 
+    // ========== isPackageBlockedAt Tests ==========
+
+    @Test
+    fun `isPackageBlockedAt should return true when package is in active window`() {
+        val windows = listOf(
+            BlockingWindow(
+                id = "work-hours",
+                startTime = "09:00",
+                endTime = "17:00",
+                packageNames = listOf("com.social.app", "com.game.app")
+            )
+        )
+
+        scheduler.setSchedule(windows)
+
+        assertTrue(scheduler.isPackageBlockedAt("com.social.app", LocalTime.of(12, 0)))
+        assertTrue(scheduler.isPackageBlockedAt("com.game.app", LocalTime.of(12, 0)))
+    }
+
+    @Test
+    fun `isPackageBlockedAt should return false when package is not in any window`() {
+        val windows = listOf(
+            BlockingWindow(
+                id = "work-hours",
+                startTime = "09:00",
+                endTime = "17:00",
+                packageNames = listOf("com.social.app")
+            )
+        )
+
+        scheduler.setSchedule(windows)
+
+        assertFalse(scheduler.isPackageBlockedAt("com.allowed.app", LocalTime.of(12, 0)))
+    }
+
+    @Test
+    fun `isPackageBlockedAt should return false when time is outside window`() {
+        val windows = listOf(
+            BlockingWindow(
+                id = "work-hours",
+                startTime = "09:00",
+                endTime = "17:00",
+                packageNames = listOf("com.social.app")
+            )
+        )
+
+        scheduler.setSchedule(windows)
+
+        assertFalse(scheduler.isPackageBlockedAt("com.social.app", LocalTime.of(20, 0)))
+    }
+
+    @Test
+    fun `isPackageBlockedAt should short-circuit and find package in first matching window`() {
+        val windows = listOf(
+            BlockingWindow(
+                id = "window-1",
+                startTime = "08:00",
+                endTime = "12:00",
+                packageNames = listOf("com.target.app")
+            ),
+            BlockingWindow(
+                id = "window-2",
+                startTime = "10:00",
+                endTime = "14:00",
+                packageNames = listOf("com.other.app")
+            )
+        )
+
+        scheduler.setSchedule(windows)
+
+        assertTrue(scheduler.isPackageBlockedAt("com.target.app", LocalTime.of(10, 0)))
+    }
+
     // ========== Edge Cases ==========
 
     @Test
@@ -359,19 +454,21 @@ class BlockingSchedulerTest {
         val morning = scheduler.getActiveBlockedPackagesAt(LocalTime.of(6, 0))
         val afternoon = scheduler.getActiveBlockedPackagesAt(LocalTime.of(15, 0))
         val night = scheduler.getActiveBlockedPackagesAt(LocalTime.of(22, 0))
+        val endOfDay = scheduler.getActiveBlockedPackagesAt(LocalTime.of(23, 59))
 
         assertTrue(morning.contains("com.always.blocked"))
         assertTrue(afternoon.contains("com.always.blocked"))
         assertTrue(night.contains("com.always.blocked"))
+        assertTrue(endOfDay.contains("com.always.blocked"))
     }
 
     @Test
-    fun `should handle one minute window`() {
+    fun `should handle same start and end time window`() {
         val windows = listOf(
             BlockingWindow(
-                id = "quick-block",
+                id = "point-block",
                 startTime = "12:00",
-                endTime = "12:01",
+                endTime = "12:00",
                 packageNames = listOf("com.quick.app")
             )
         )
@@ -379,9 +476,11 @@ class BlockingSchedulerTest {
         scheduler.setSchedule(windows)
 
         val during = scheduler.getActiveBlockedPackagesAt(LocalTime.of(12, 0))
+        val before = scheduler.getActiveBlockedPackagesAt(LocalTime.of(11, 59))
         val after = scheduler.getActiveBlockedPackagesAt(LocalTime.of(12, 1))
 
         assertTrue(during.contains("com.quick.app"))
+        assertTrue(before.isEmpty())
         assertTrue(after.isEmpty())
     }
 }

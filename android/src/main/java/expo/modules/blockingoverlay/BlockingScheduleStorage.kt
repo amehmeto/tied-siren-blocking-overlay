@@ -16,12 +16,23 @@ import org.json.JSONObject
  * The cache is updated when [setSchedule] or [clearSchedule] is called from this process.
  * If SharedPreferences is modified externally (e.g., another process or direct file edit),
  * the cache will not reflect those changes until [invalidateCache] is called explicitly.
+ *
+ * **Thread Safety Note:**
+ * The cache uses @Volatile for visibility across threads. Individual read/write operations
+ * are thread-safe, but compound operations (read-then-write) are not atomic. For this app's
+ * single-process use case, this is acceptable.
  */
 object BlockingScheduleStorage {
 
     private const val TAG = "BlockingScheduleStorage"
     private const val PREFS_NAME = "tied_siren_blocking_schedule"
     private const val KEY_SCHEDULE = "blocking_schedule"
+
+    // JSON keys for serialization
+    private const val JSON_KEY_ID = "id"
+    private const val JSON_KEY_START_TIME = "startTime"
+    private const val JSON_KEY_END_TIME = "endTime"
+    private const val JSON_KEY_PACKAGE_NAMES = "packageNames"
 
     @Volatile
     private var cachedSchedule: List<BlockingWindow>? = null
@@ -80,10 +91,10 @@ object BlockingScheduleStorage {
         val jsonArray = JSONArray()
         for (window in windows) {
             val jsonObject = JSONObject().apply {
-                put("id", window.id)
-                put("startTime", window.startTime)
-                put("endTime", window.endTime)
-                put("packageNames", JSONArray(window.packageNames))
+                put(JSON_KEY_ID, window.id)
+                put(JSON_KEY_START_TIME, window.startTime)
+                put(JSON_KEY_END_TIME, window.endTime)
+                put(JSON_KEY_PACKAGE_NAMES, JSONArray(window.packageNames))
             }
             jsonArray.put(jsonObject)
         }
@@ -96,22 +107,22 @@ object BlockingScheduleStorage {
             val jsonArray = JSONArray(jsonString)
             for (i in 0 until jsonArray.length()) {
                 val jsonObject = jsonArray.getJSONObject(i)
-                val packageNamesArray = jsonObject.getJSONArray("packageNames")
+                val packageNamesArray = jsonObject.getJSONArray(JSON_KEY_PACKAGE_NAMES)
                 val packageNames = mutableListOf<String>()
                 for (j in 0 until packageNamesArray.length()) {
                     packageNames.add(packageNamesArray.getString(j))
                 }
                 windows.add(
                     BlockingWindow(
-                        id = jsonObject.getString("id"),
-                        startTime = jsonObject.getString("startTime"),
-                        endTime = jsonObject.getString("endTime"),
+                        id = jsonObject.getString(JSON_KEY_ID),
+                        startTime = jsonObject.getString(JSON_KEY_START_TIME),
+                        endTime = jsonObject.getString(JSON_KEY_END_TIME),
                         packageNames = packageNames
                     )
                 )
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to deserialize schedule: ${e.message}")
+            Log.w(TAG, "Failed to deserialize schedule, returning empty list: ${e.message}")
         }
         return windows
     }

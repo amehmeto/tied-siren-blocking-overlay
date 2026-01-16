@@ -12,13 +12,18 @@ import java.time.format.DateTimeFormatter
  * and blocklists, while this class independently stores and enforces the schedule on
  * the native layer.
  *
+ * **Thread Safety Note:**
+ * This class delegates storage to [BlockingScheduleStorage] which uses a volatile cache.
+ * While individual operations are thread-safe, compound operations (e.g., read-modify-write)
+ * are not atomic. For this app's single-process use case, this is acceptable.
+ *
  * @property context Android context for accessing storage
  */
 class BlockingScheduler(private val context: Context) {
 
     companion object {
         private const val TAG = "BlockingScheduler"
-        private val TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm")
+        internal val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
     }
 
     /**
@@ -29,7 +34,6 @@ class BlockingScheduler(private val context: Context) {
      */
     fun setSchedule(windows: List<BlockingWindow>) {
         BlockingScheduleStorage.setSchedule(context, windows)
-        Log.d(TAG, "Schedule replaced with ${windows.size} windows")
     }
 
     /**
@@ -46,7 +50,6 @@ class BlockingScheduler(private val context: Context) {
      */
     fun clearSchedule() {
         BlockingScheduleStorage.clearSchedule(context)
-        Log.d(TAG, "Schedule cleared")
     }
 
     /**
@@ -70,7 +73,7 @@ class BlockingScheduler(private val context: Context) {
         val blockedPackages = mutableSetOf<String>()
 
         for (window in schedule) {
-            if (isTimeInWindow(time, window)) {
+            if (window.isActiveAt(time)) {
                 blockedPackages.addAll(window.packageNames)
             }
         }
@@ -80,33 +83,32 @@ class BlockingScheduler(private val context: Context) {
     }
 
     /**
-     * Checks if the specified time falls within the given blocking window.
-     * Handles overnight windows (e.g., 23:00 to 02:00) correctly.
-     *
-     * @param time The time to check
-     * @param window The blocking window to check against
-     * @return true if the time is within the window
-     */
-    private fun isTimeInWindow(time: LocalTime, window: BlockingWindow): Boolean {
-        val startTime = LocalTime.parse(window.startTime, TIME_FORMATTER)
-        val endTime = LocalTime.parse(window.endTime, TIME_FORMATTER)
-
-        return if (startTime <= endTime) {
-            // Normal window (e.g., 09:00 to 17:00)
-            time >= startTime && time < endTime
-        } else {
-            // Overnight window (e.g., 23:00 to 02:00)
-            time >= startTime || time < endTime
-        }
-    }
-
-    /**
      * Checks if a specific package is currently blocked.
+     * Uses short-circuit evaluation for efficiency.
      *
      * @param packageName The package name to check
      * @return true if the package is blocked at the current time
      */
     fun isPackageBlocked(packageName: String): Boolean {
-        return getActiveBlockedPackages().contains(packageName)
+        return isPackageBlockedAt(packageName, LocalTime.now())
+    }
+
+    /**
+     * Checks if a specific package is blocked at a specific time.
+     * Uses short-circuit evaluation - returns as soon as a matching window is found.
+     *
+     * @param packageName The package name to check
+     * @param time The time to check
+     * @return true if the package is blocked at the specified time
+     */
+    fun isPackageBlockedAt(packageName: String, time: LocalTime): Boolean {
+        val schedule = BlockingScheduleStorage.getSchedule(context)
+
+        for (window in schedule) {
+            if (window.isActiveAt(time) && window.packageNames.contains(packageName)) {
+                return true
+            }
+        }
+        return false
     }
 }
