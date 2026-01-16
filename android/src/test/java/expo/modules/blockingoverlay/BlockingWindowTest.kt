@@ -88,6 +88,26 @@ class BlockingWindowTest {
         )
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun `should reject empty id`() {
+        BlockingWindow(
+            id = "",
+            startTime = "09:00",
+            endTime = "17:00",
+            packageNames = emptyList()
+        )
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `should reject blank id`() {
+        BlockingWindow(
+            id = "   ",
+            startTime = "09:00",
+            endTime = "17:00",
+            packageNames = emptyList()
+        )
+    }
+
     @Test
     fun `should accept empty package list`() {
         val window = BlockingWindow(

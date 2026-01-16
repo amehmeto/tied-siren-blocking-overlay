@@ -3,7 +3,6 @@ package expo.modules.blockingoverlay
 import android.content.Context
 import android.util.Log
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 
 /**
  * Manages blocking schedules and determines which apps should be blocked at any given time.
@@ -23,7 +22,6 @@ class BlockingScheduler(private val context: Context) {
 
     companion object {
         private const val TAG = "BlockingScheduler"
-        internal val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
     }
 
     /**
@@ -78,7 +76,7 @@ class BlockingScheduler(private val context: Context) {
             }
         }
 
-        Log.v(TAG, "Active blocked packages at ${time.format(TIME_FORMATTER)}: ${blockedPackages.size}")
+        Log.v(TAG, "Active blocked packages at ${time.format(BlockingWindow.TIME_FORMATTER)}: ${blockedPackages.size}")
         return blockedPackages
     }
 

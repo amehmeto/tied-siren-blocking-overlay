@@ -1,6 +1,7 @@
 package expo.modules.blockingoverlay
 
 import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 /**
  * Represents a time window during which specific apps should be blocked.
@@ -17,6 +18,7 @@ data class BlockingWindow(
     val packageNames: List<String>
 ) {
     init {
+        require(id.isNotBlank()) { "id must not be blank" }
         require(isValidTimeFormat(startTime)) { "startTime must be in HH:mm format" }
         require(isValidTimeFormat(endTime)) { "endTime must be in HH:mm format" }
     }
@@ -32,8 +34,8 @@ data class BlockingWindow(
      * @return true if this window is active at the specified time
      */
     fun isActiveAt(time: LocalTime): Boolean {
-        val start = LocalTime.parse(startTime, BlockingScheduler.TIME_FORMATTER)
-        val end = LocalTime.parse(endTime, BlockingScheduler.TIME_FORMATTER)
+        val start = LocalTime.parse(startTime, TIME_FORMATTER)
+        val end = LocalTime.parse(endTime, TIME_FORMATTER)
 
         return if (start <= end) {
             // Normal window (e.g., 09:00 to 17:00) - both inclusive
@@ -45,6 +47,7 @@ data class BlockingWindow(
     }
 
     companion object {
+        internal val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
         private val TIME_PATTERN = Regex("^([01]\\d|2[0-3]):([0-5]\\d)$")
 
         fun isValidTimeFormat(time: String): Boolean {
