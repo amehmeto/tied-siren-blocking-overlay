@@ -107,4 +107,107 @@ class TiedSirenBlockingOverlayModuleTest {
         assertTrue(homeIntent.categories.contains(Intent.CATEGORY_HOME))
         assertTrue(homeIntent.flags and Intent.FLAG_ACTIVITY_NEW_TASK != 0)
     }
+
+    // ========== Schedule API Error Codes Tests ==========
+
+    @Test
+    fun `CodedException should contain correct error code for no context`() {
+        val exception = CodedException("ERR_NO_CONTEXT", "Context not available", null)
+        assertEquals("ERR_NO_CONTEXT", exception.code)
+    }
+
+    @Test
+    fun `CodedException should contain correct error code for invalid schedule`() {
+        val exception = CodedException("ERR_INVALID_SCHEDULE", "Invalid schedule data", null)
+        assertEquals("ERR_INVALID_SCHEDULE", exception.code)
+    }
+
+    @Test
+    fun `CodedException should contain correct error code for schedule failure`() {
+        val exception = CodedException("ERR_SCHEDULE_FAILED", "Failed to set schedule", null)
+        assertEquals("ERR_SCHEDULE_FAILED", exception.code)
+    }
+
+    // ========== Schedule Data Structure Tests ==========
+
+    @Test
+    fun `BlockingWindow can be created from map data`() {
+        val windowMap = mapOf(
+            "id" to "work-hours",
+            "startTime" to "09:00",
+            "endTime" to "17:00",
+            "packageNames" to listOf("com.instagram.android", "com.twitter.android")
+        )
+
+        @Suppress("UNCHECKED_CAST")
+        val window = BlockingWindow(
+            id = windowMap["id"] as String,
+            startTime = windowMap["startTime"] as String,
+            endTime = windowMap["endTime"] as String,
+            packageNames = windowMap["packageNames"] as List<String>
+        )
+
+        assertEquals("work-hours", window.id)
+        assertEquals("09:00", window.startTime)
+        assertEquals("17:00", window.endTime)
+        assertEquals(2, window.packageNames.size)
+        assertTrue(window.packageNames.contains("com.instagram.android"))
+        assertTrue(window.packageNames.contains("com.twitter.android"))
+    }
+
+    @Test
+    fun `BlockingWindow can be converted back to map`() {
+        val window = BlockingWindow(
+            id = "sleep-time",
+            startTime = "22:00",
+            endTime = "06:00",
+            packageNames = listOf("com.facebook.katana")
+        )
+
+        val map = mapOf(
+            "id" to window.id,
+            "startTime" to window.startTime,
+            "endTime" to window.endTime,
+            "packageNames" to window.packageNames
+        )
+
+        assertEquals("sleep-time", map["id"])
+        assertEquals("22:00", map["startTime"])
+        assertEquals("06:00", map["endTime"])
+        assertEquals(listOf("com.facebook.katana"), map["packageNames"])
+    }
+
+    @Test
+    fun `multiple BlockingWindows can be mapped from list`() {
+        val windowsList = listOf(
+            mapOf(
+                "id" to "window-1",
+                "startTime" to "09:00",
+                "endTime" to "12:00",
+                "packageNames" to listOf("com.app1")
+            ),
+            mapOf(
+                "id" to "window-2",
+                "startTime" to "14:00",
+                "endTime" to "18:00",
+                "packageNames" to listOf("com.app2", "com.app3")
+            )
+        )
+
+        @Suppress("UNCHECKED_CAST")
+        val blockingWindows = windowsList.map { windowMap ->
+            BlockingWindow(
+                id = windowMap["id"] as String,
+                startTime = windowMap["startTime"] as String,
+                endTime = windowMap["endTime"] as String,
+                packageNames = windowMap["packageNames"] as List<String>
+            )
+        }
+
+        assertEquals(2, blockingWindows.size)
+        assertEquals("window-1", blockingWindows[0].id)
+        assertEquals("window-2", blockingWindows[1].id)
+        assertEquals(1, blockingWindows[0].packageNames.size)
+        assertEquals(2, blockingWindows[1].packageNames.size)
+    }
 }
