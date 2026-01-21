@@ -37,7 +37,7 @@
       "WebSearch",
       "Bash(git add:*)"
     ],
-    "deny": [],
+    "deny": ["Bash(SKIP_CI_WATCH=1:*)", "Bash(SKIP_CI_WATCH=true:*)"],
     "ask": []
   }
 }

@@ -28,10 +28,14 @@ class BlockingScheduler(private val context: Context) {
      * Replaces the current blocking schedule with a new one.
      * This is called via the setBlockingSchedule() API.
      *
+     * The schedule is stored in SharedPreferences and checked in real-time
+     * by BlockingCallback whenever an app change is detected.
+     *
      * @param windows The new list of blocking windows to enforce
      */
     fun setSchedule(windows: List<BlockingWindow>) {
         BlockingScheduleStorage.setSchedule(context, windows)
+        Log.d(TAG, "Schedule updated with ${windows.size} windows")
     }
 
     /**
@@ -45,9 +49,11 @@ class BlockingScheduler(private val context: Context) {
 
     /**
      * Clears all blocking windows from the schedule.
+     * After clearing, no apps will be blocked.
      */
     fun clearSchedule() {
         BlockingScheduleStorage.clearSchedule(context)
+        Log.d(TAG, "Schedule cleared")
     }
 
     /**

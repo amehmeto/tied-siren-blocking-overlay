@@ -1,7 +1,70 @@
+import type { BlockingWindow } from './TiedSirenBlockingOverlay.types'
 import TiedSirenBlockingOverlayModule from './TiedSirenBlockingOverlayModule'
 
 export { TiedSirenBlockingOverlayModule }
 export * from './TiedSirenBlockingOverlay.types'
+
+// ============================================================
+// Schedule-based blocking API (#9, #18)
+// ============================================================
+
+/**
+ * Sets the blocking schedule for native enforcement.
+ * Once set, the native layer handles all blocking autonomously
+ * based on the schedule and current time.
+ *
+ * @param windows - Array of time windows with their blocked packages
+ * @throws ERR_NO_CONTEXT - If React context is not available
+ * @throws ERR_INVALID_SCHEDULE - If schedule data is malformed
+ * @throws ERR_SCHEDULE_FAILED - If storing the schedule fails
+ *
+ * @example
+ * ```typescript
+ * await setBlockingSchedule([
+ *   {
+ *     id: 'work-hours',
+ *     startTime: '09:00',
+ *     endTime: '17:00',
+ *     packageNames: ['com.instagram.android', 'com.twitter.android']
+ *   },
+ *   {
+ *     id: 'sleep-time',
+ *     startTime: '22:00',
+ *     endTime: '06:00', // Overnight window
+ *     packageNames: ['com.facebook.katana']
+ *   }
+ * ])
+ * ```
+ */
+export async function setBlockingSchedule(
+  windows: BlockingWindow[],
+): Promise<void> {
+  return TiedSirenBlockingOverlayModule.setBlockingSchedule(windows)
+}
+
+/**
+ * Gets the current blocking schedule from native storage.
+ *
+ * @returns Array of currently configured blocking windows
+ * @throws ERR_NO_CONTEXT - If React context is not available
+ */
+export async function getBlockingSchedule(): Promise<BlockingWindow[]> {
+  return TiedSirenBlockingOverlayModule.getBlockingSchedule()
+}
+
+/**
+ * Clears the blocking schedule from native storage.
+ * After calling this, no apps will be blocked.
+ *
+ * @throws ERR_NO_CONTEXT - If React context is not available
+ */
+export async function clearBlockingSchedule(): Promise<void> {
+  return TiedSirenBlockingOverlayModule.clearBlockingSchedule()
+}
+
+// ============================================================
+// Direct blocking API (legacy/manual control)
+// ============================================================
 
 /**
  * Displays a fullscreen blocking overlay on Android.
