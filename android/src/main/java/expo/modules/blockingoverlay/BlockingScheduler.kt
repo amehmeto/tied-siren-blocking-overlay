@@ -28,28 +28,14 @@ class BlockingScheduler(private val context: Context) {
      * Replaces the current blocking schedule with a new one.
      * This is called via the setBlockingSchedule() API.
      *
-     * Cancels any existing alarms for the old schedule and schedules new alarms
-     * for the window start/end times.
+     * The schedule is stored in SharedPreferences and checked in real-time
+     * by BlockingCallback whenever an app change is detected.
      *
      * @param windows The new list of blocking windows to enforce
      */
     fun setSchedule(windows: List<BlockingWindow>) {
-        // Cancel alarms for the old schedule before replacing
-        val oldSchedule = BlockingScheduleStorage.getSchedule(context)
-        if (oldSchedule.isNotEmpty()) {
-            BlockingAlarmScheduler.cancelAllAlarms(context, oldSchedule)
-        }
-
-        // Store the new schedule
         BlockingScheduleStorage.setSchedule(context, windows)
-
-        // Schedule alarms for the new windows
-        if (windows.isNotEmpty()) {
-            BlockingAlarmScheduler.scheduleAlarms(context)
-        } else {
-            // Clear blocked apps if schedule is empty
-            BlockedAppsStorage.clearBlockedApps(context)
-        }
+        Log.d(TAG, "Schedule updated with ${windows.size} windows")
     }
 
     /**
@@ -63,17 +49,11 @@ class BlockingScheduler(private val context: Context) {
 
     /**
      * Clears all blocking windows from the schedule.
-     * Cancels all scheduled alarms and clears the blocked apps list.
+     * After clearing, no apps will be blocked.
      */
     fun clearSchedule() {
-        // Cancel alarms for the current schedule before clearing
-        val currentSchedule = BlockingScheduleStorage.getSchedule(context)
-        if (currentSchedule.isNotEmpty()) {
-            BlockingAlarmScheduler.cancelAllAlarms(context, currentSchedule)
-        }
-
         BlockingScheduleStorage.clearSchedule(context)
-        BlockedAppsStorage.clearBlockedApps(context)
+        Log.d(TAG, "Schedule cleared")
     }
 
     /**

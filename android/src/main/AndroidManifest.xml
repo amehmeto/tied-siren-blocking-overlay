@@ -1,10 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Required to re-schedule alarms after device reboot -->
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <!-- Required for precise alarm scheduling (Android 12+) -->
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-
     <application>
         <activity
             android:name=".BlockingOverlayActivity"
@@ -13,19 +8,6 @@
             android:theme="@style/Theme.AppCompat.NoActionBar"
             android:excludeFromRecents="true"
             android:taskAffinity="" />
-
-        <!-- Receiver for AlarmManager callbacks and device boot -->
-        <receiver
-            android:name=".BlockingReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="expo.modules.blockingoverlay.ACTION_WINDOW_START" />
-                <action android:name="expo.modules.blockingoverlay.ACTION_WINDOW_END" />
-            </intent-filter>
-        </receiver>
     </application>
 
 </manifest>
