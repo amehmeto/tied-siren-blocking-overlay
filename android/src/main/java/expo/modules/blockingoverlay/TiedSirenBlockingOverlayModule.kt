@@ -15,6 +15,56 @@ class TiedSirenBlockingOverlayModule : Module() {
     override fun definition() = ModuleDefinition {
         Name("TiedSirenBlockingOverlay")
 
+        // #9: Expose setBlockingSchedule() API to JS
+        AsyncFunction("setBlockingSchedule") { windows: List<Map<String, Any>> ->
+            val context = appContext.reactContext
+                ?: throw CodedException("ERR_NO_CONTEXT", "Context not available", null)
+
+            try {
+                val blockingWindows = windows.map { windowMap ->
+                    @Suppress("UNCHECKED_CAST")
+                    BlockingWindow(
+                        id = windowMap["id"] as String,
+                        startTime = windowMap["startTime"] as String,
+                        endTime = windowMap["endTime"] as String,
+                        packageNames = (windowMap["packageNames"] as List<String>)
+                    )
+                }
+
+                BlockingScheduler(context).setSchedule(blockingWindows)
+                Log.d(TAG, "setBlockingSchedule: ${blockingWindows.size} windows configured")
+            } catch (e: IllegalArgumentException) {
+                Log.e(TAG, "Invalid schedule data: ${e.message}")
+                throw CodedException("ERR_INVALID_SCHEDULE", "Invalid schedule data: ${e.message}", e)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to set schedule: ${e.message}", e)
+                throw CodedException("ERR_SCHEDULE_FAILED", "Failed to set schedule: ${e.message}", e)
+            }
+        }
+
+        AsyncFunction("getBlockingSchedule") {
+            val context = appContext.reactContext
+                ?: throw CodedException("ERR_NO_CONTEXT", "Context not available", null)
+
+            val windows = BlockingScheduleStorage.getSchedule(context)
+            windows.map { window ->
+                mapOf(
+                    "id" to window.id,
+                    "startTime" to window.startTime,
+                    "endTime" to window.endTime,
+                    "packageNames" to window.packageNames
+                )
+            }
+        }
+
+        AsyncFunction("clearBlockingSchedule") {
+            val context = appContext.reactContext
+                ?: throw CodedException("ERR_NO_CONTEXT", "Context not available", null)
+
+            BlockingScheduler(context).clearSchedule()
+            Log.d(TAG, "clearBlockingSchedule: schedule cleared")
+        }
+
         AsyncFunction("showOverlay") { packageName: String ->
             if (packageName.isBlank()) {
                 Log.e(TAG, "Invalid package name: empty or blank")

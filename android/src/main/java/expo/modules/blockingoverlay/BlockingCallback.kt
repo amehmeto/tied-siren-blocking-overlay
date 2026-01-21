@@ -5,6 +5,7 @@ import android.content.Intent
 import android.util.Log
 import expo.modules.accessibilityservice.AccessibilityService
 import expo.modules.foregroundservice.ForegroundServiceCallback
+import java.time.LocalTime
 
 /**
  * Native callback that bridges foreground service lifecycle to accessibility events.
@@ -57,6 +58,13 @@ class BlockingCallback : ForegroundServiceCallback, AccessibilityService.EventLi
 
     // ========== AccessibilityService.EventListener ==========
 
+    /**
+     * Called when the foreground app changes.
+     * Checks if the package is blocked in any currently active time window.
+     *
+     * #18: Uses schedule-based blocking (checks time windows) instead of
+     * simple blocked apps list.
+     */
     override fun onAppChanged(packageName: String, className: String, timestamp: Long) {
         val context = applicationContext
         if (context == null) {
@@ -64,21 +72,27 @@ class BlockingCallback : ForegroundServiceCallback, AccessibilityService.EventLi
             return
         }
 
-        val blockedApps = BlockedAppsStorage.getBlockedApps(context)
+        // Check if package should be blocked based on schedule + current time
+        val schedule = BlockingScheduleStorage.getSchedule(context)
+        val now = LocalTime.now()
 
-        if (blockedApps.contains(packageName)) {
+        val shouldBlock = schedule.any { window ->
+            window.isActiveAt(now) && window.packageNames.contains(packageName)
+        }
+
+        if (shouldBlock) {
             // Debounce: skip if same package was blocked recently
-            val now = System.currentTimeMillis()
+            val currentTime = System.currentTimeMillis()
             if (packageName == lastOverlayPackage &&
-                (now - lastOverlayLaunchTime) < DEBOUNCE_INTERVAL_MS) {
+                (currentTime - lastOverlayLaunchTime) < DEBOUNCE_INTERVAL_MS) {
                 Log.d(TAG, "Debouncing overlay launch for: $packageName")
                 return
             }
 
-            Log.i(TAG, "BLOCKED app detected: $packageName - launching overlay")
+            Log.i(TAG, "BLOCKED app detected: $packageName (in active window at $now) - launching overlay")
             launchOverlay(context, packageName)
         } else {
-            Log.v(TAG, "App changed: $packageName (not blocked)")
+            Log.v(TAG, "App changed: $packageName (not blocked or outside active windows)")
         }
     }
 
