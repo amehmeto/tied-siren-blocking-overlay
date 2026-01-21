@@ -40,9 +40,9 @@ class BlockingCallback : ForegroundServiceCallback, AccessibilityService.EventLi
         val registered = AccessibilityService.addEventListener(this)
         Log.d(TAG, "Accessibility listener registration: $registered")
 
-        // Log current blocked apps for debugging
-        val blockedApps = BlockedAppsStorage.getBlockedApps(context)
-        Log.d(TAG, "Currently blocked apps: $blockedApps")
+        // Log current schedule for debugging
+        val schedule = BlockingScheduleStorage.getSchedule(context)
+        Log.d(TAG, "Current schedule: ${schedule.size} windows configured")
     }
 
     override fun onServiceStopped() {
@@ -75,6 +75,8 @@ class BlockingCallback : ForegroundServiceCallback, AccessibilityService.EventLi
         // Check if package should be blocked based on schedule + current time
         val schedule = BlockingScheduleStorage.getSchedule(context)
         val now = LocalTime.now()
+        val activeWindowCount = schedule.count { it.isActiveAt(now) }
+        Log.v(TAG, "Schedule check: ${schedule.size} windows, $activeWindowCount active at $now")
 
         val shouldBlock = schedule.any { window ->
             window.isActiveAt(now) && window.packageNames.contains(packageName)
