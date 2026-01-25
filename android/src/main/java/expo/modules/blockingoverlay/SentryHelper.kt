@@ -29,7 +29,7 @@ object SentryHelper {
     fun addBreadcrumb(category: String, message: String, data: Map<String, Any>? = null) {
         // Always log to logcat for adb debugging
         val dataStr = data?.entries?.joinToString(", ") { "${it.key}=${it.value}" } ?: ""
-        Log.d("TSOB.$category", if (dataStr.isNotEmpty()) "$message | $dataStr" else message)
+        Log.d("[TSOB].$category", if (dataStr.isNotEmpty()) "$message | $dataStr" else message)
 
         if (!sentryAvailable) return
 
@@ -40,13 +40,13 @@ object SentryHelper {
             // Create breadcrumb: Breadcrumb()
             val breadcrumb = breadcrumbClass.getDeclaredConstructor().newInstance()
 
-            // Set category
+            // Set category - prefixed with [TSOB] to distinguish from TiedSiren51
             breadcrumbClass.getMethod("setCategory", String::class.java)
-                .invoke(breadcrumb, "tsob.$category")
+                .invoke(breadcrumb, "[TSOB].$category")
 
-            // Set message
+            // Set message - also prefixed
             breadcrumbClass.getMethod("setMessage", String::class.java)
-                .invoke(breadcrumb, message)
+                .invoke(breadcrumb, "[TSOB] $message")
 
             // Set level to INFO
             val sentryLevelClass = Class.forName("io.sentry.SentryLevel")
@@ -75,7 +75,7 @@ object SentryHelper {
      * Captures an error message to Sentry.
      */
     fun captureMessage(message: String, level: String = "error") {
-        Log.e("TSOB.Error", message)
+        Log.e("[TSOB].Error", message)
 
         if (!sentryAvailable) return
 
@@ -101,7 +101,7 @@ object SentryHelper {
      * Captures an exception to Sentry.
      */
     fun captureException(throwable: Throwable) {
-        Log.e("TSOB.Exception", "Exception captured", throwable)
+        Log.e("[TSOB].Exception", "[TSOB] Exception captured", throwable)
 
         if (!sentryAvailable) return
 
