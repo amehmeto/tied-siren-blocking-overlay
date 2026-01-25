@@ -31,13 +31,24 @@ class TiedSirenBlockingOverlayModule : Module() {
                     )
                 }
 
+                // Sentry breadcrumb for JS -> Native call
+                val allPackages = blockingWindows.flatMap { it.packageNames }.distinct()
+                SentryHelper.addBreadcrumb("module", "setBlockingSchedule called from JS", mapOf(
+                    "windowCount" to blockingWindows.size,
+                    "totalPackages" to allPackages.size,
+                    "packages" to allPackages.joinToString(","),
+                    "windows" to blockingWindows.map { "${it.id}:${it.startTime}-${it.endTime}" }.joinToString("; ")
+                ))
+
                 BlockingScheduler(context).setSchedule(blockingWindows)
                 Log.d(TAG, "setBlockingSchedule: ${blockingWindows.size} windows configured")
             } catch (e: IllegalArgumentException) {
                 Log.e(TAG, "Invalid schedule data: ${e.message}")
+                SentryHelper.captureException(e)
                 throw CodedException("ERR_INVALID_SCHEDULE", "Invalid schedule data: ${e.message}", e)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to set schedule: ${e.message}", e)
+                SentryHelper.captureException(e)
                 throw CodedException("ERR_SCHEDULE_FAILED", "Failed to set schedule: ${e.message}", e)
             }
         }

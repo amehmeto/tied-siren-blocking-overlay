@@ -66,6 +66,9 @@ dependencies {
   implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
   implementation 'androidx.appcompat:appcompat:1.6.1'
 
+  // Sentry for debugging - compileOnly since it's provided by host app via @sentry/react-native
+  compileOnly 'io.sentry:sentry-android:7.3.0'
+
   // Required for implementing interfaces from other modules
   // compileOnly means compile against interfaces but don't bundle them (provided at runtime by app)
   // These dependencies are conditional - only available when used within the main app

@@ -43,6 +43,19 @@ class BlockingCallback : ForegroundServiceCallback, AccessibilityService.EventLi
         // Log current schedule for debugging
         val schedule = BlockingScheduleStorage.getSchedule(context)
         Log.d(TAG, "Current schedule: ${schedule.size} windows configured")
+
+        // Sentry breadcrumb for debugging
+        val packageNames = schedule.flatMap { it.packageNames }.distinct()
+        SentryHelper.addBreadcrumb("callback", "Service started", mapOf(
+            "listenerRegistered" to registered,
+            "windowCount" to schedule.size,
+            "packageCount" to packageNames.size,
+            "packages" to packageNames.joinToString(",")
+        ))
+
+        if (!registered) {
+            SentryHelper.captureMessage("AccessibilityService listener registration failed", "warning")
+        }
     }
 
     override fun onServiceStopped() {
@@ -50,6 +63,10 @@ class BlockingCallback : ForegroundServiceCallback, AccessibilityService.EventLi
 
         val removed = AccessibilityService.removeEventListener(this)
         Log.d(TAG, "Accessibility listener removal: $removed")
+
+        SentryHelper.addBreadcrumb("callback", "Service stopped", mapOf(
+            "listenerRemoved" to removed
+        ))
 
         applicationContext = null
         lastOverlayLaunchTime = 0L
@@ -69,6 +86,9 @@ class BlockingCallback : ForegroundServiceCallback, AccessibilityService.EventLi
         val context = applicationContext
         if (context == null) {
             Log.w(TAG, "onAppChanged called but context is null")
+            SentryHelper.addBreadcrumb("callback", "onAppChanged - context null", mapOf(
+                "packageName" to packageName
+            ))
             return
         }
 
@@ -78,9 +98,25 @@ class BlockingCallback : ForegroundServiceCallback, AccessibilityService.EventLi
         val activeWindowCount = schedule.count { it.isActiveAt(now) }
         Log.v(TAG, "Schedule check: ${schedule.size} windows, $activeWindowCount active at $now")
 
-        val shouldBlock = schedule.any { window ->
-            window.isActiveAt(now) && window.packageNames.contains(packageName)
-        }
+        // Find which windows contain this package and their active status
+        val matchingWindows = schedule.filter { it.packageNames.contains(packageName) }
+        val activeMatchingWindows = matchingWindows.filter { it.isActiveAt(now) }
+
+        val shouldBlock = activeMatchingWindows.isNotEmpty()
+
+        // Detailed Sentry breadcrumb for debugging
+        SentryHelper.addBreadcrumb("callback", "onAppChanged", mapOf(
+            "packageName" to packageName,
+            "currentTime" to now.toString(),
+            "totalWindows" to schedule.size,
+            "activeWindows" to activeWindowCount,
+            "matchingWindows" to matchingWindows.size,
+            "activeMatchingWindows" to activeMatchingWindows.size,
+            "shouldBlock" to shouldBlock,
+            "windowDetails" to schedule.map { w ->
+                "${w.id}:${w.startTime}-${w.endTime}:active=${w.isActiveAt(now)}:hasPackage=${w.packageNames.contains(packageName)}"
+            }.joinToString("; ")
+        ))
 
         if (shouldBlock) {
             // Debounce: skip if same package was blocked recently
@@ -88,10 +124,17 @@ class BlockingCallback : ForegroundServiceCallback, AccessibilityService.EventLi
             if (packageName == lastOverlayPackage &&
                 (currentTime - lastOverlayLaunchTime) < DEBOUNCE_INTERVAL_MS) {
                 Log.d(TAG, "Debouncing overlay launch for: $packageName")
+                SentryHelper.addBreadcrumb("callback", "Debounced", mapOf(
+                    "packageName" to packageName
+                ))
                 return
             }
 
             Log.i(TAG, "BLOCKED app detected: $packageName (in active window at $now) - launching overlay")
+            SentryHelper.addBreadcrumb("callback", "BLOCKING - launching overlay", mapOf(
+                "packageName" to packageName,
+                "time" to now.toString()
+            ))
             launchOverlay(context, packageName)
         } else {
             Log.v(TAG, "App changed: $packageName (not blocked or outside active windows)")
@@ -115,8 +158,16 @@ class BlockingCallback : ForegroundServiceCallback, AccessibilityService.EventLi
             lastOverlayPackage = packageName
 
             Log.d(TAG, "Overlay launched for: $packageName")
+            SentryHelper.addBreadcrumb("callback", "Overlay launched successfully", mapOf(
+                "packageName" to packageName
+            ))
         } catch (e: Exception) {
             Log.e(TAG, "Failed to launch overlay: ${e.message}", e)
+            SentryHelper.captureException(e)
+            SentryHelper.addBreadcrumb("callback", "Overlay launch FAILED", mapOf(
+                "packageName" to packageName,
+                "error" to (e.message ?: "unknown")
+            ))
         }
     }
 }

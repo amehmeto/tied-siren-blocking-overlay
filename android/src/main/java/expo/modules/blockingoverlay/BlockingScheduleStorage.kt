@@ -47,6 +47,15 @@ object BlockingScheduleStorage {
         cachedSchedule = ArrayList(windows)
 
         Log.d(TAG, "Schedule updated: ${windows.size} windows")
+
+        // Sentry breadcrumb with detailed schedule info
+        val allPackages = windows.flatMap { it.packageNames }.distinct()
+        SentryHelper.addBreadcrumb("storage", "Schedule saved", mapOf(
+            "windowCount" to windows.size,
+            "totalPackages" to allPackages.size,
+            "packages" to allPackages.joinToString(","),
+            "windows" to windows.map { "${it.id}:${it.startTime}-${it.endTime}:${it.packageNames.size}pkgs" }.joinToString("; ")
+        ))
     }
 
     fun getSchedule(context: Context): List<BlockingWindow> {
@@ -67,6 +76,15 @@ object BlockingScheduleStorage {
 
         cachedSchedule = windows
         Log.d(TAG, "Loaded ${windows.size} windows from disk")
+
+        // Sentry breadcrumb when schedule is loaded from disk
+        val allPackages = windows.flatMap { it.packageNames }.distinct()
+        SentryHelper.addBreadcrumb("storage", "Schedule loaded from disk", mapOf(
+            "windowCount" to windows.size,
+            "totalPackages" to allPackages.size,
+            "packages" to allPackages.joinToString(","),
+            "hadCachedValue" to false
+        ))
 
         return windows
     }
