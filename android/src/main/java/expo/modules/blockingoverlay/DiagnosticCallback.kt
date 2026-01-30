@@ -11,13 +11,13 @@ import expo.modules.foregroundservice.ForegroundServiceCallback
  *
  * If working, you'll see:
  * - Toast on device: "TSOB DiagnosticCallback: Service started!"
- * - Logcat: [TSOB].Diagnostic: Service started
- * - Sentry breadcrumb: [TSOB].diagnostic: DI test - service started
+ * - Logcat: [TSBO].Diagnostic: Service started
+ * - Sentry breadcrumb: [TSBO].diagnostic: DI test - service started
  */
 class DiagnosticCallback : ForegroundServiceCallback {
 
     companion object {
-        private const val TAG = "[TSOB].Diagnostic"
+        private const val TAG = "[TSBO].Diagnostic"
         const val CLASS_NAME = "expo.modules.blockingoverlay.DiagnosticCallback"
     }
 

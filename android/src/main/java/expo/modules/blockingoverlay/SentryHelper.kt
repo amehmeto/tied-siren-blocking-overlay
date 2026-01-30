@@ -45,7 +45,7 @@ object SentryHelper {
     fun addBreadcrumb(category: String, message: String, data: Map<String, Any>? = null) {
         // Always log to logcat for adb debugging
         val dataStr = data?.entries?.joinToString(", ") { "${it.key}=${it.value}" } ?: ""
-        Log.d("[TSOB].$category", if (dataStr.isNotEmpty()) "$message | $dataStr" else message)
+        Log.d("[TSBO].$category", if (dataStr.isNotEmpty()) "$message | $dataStr" else message)
 
         if (!sentryAvailable) return
 
@@ -56,13 +56,13 @@ object SentryHelper {
             // Create breadcrumb: Breadcrumb()
             val breadcrumb = breadcrumbClass.getDeclaredConstructor().newInstance()
 
-            // Set category - prefixed with [TSOB] to distinguish from TiedSiren51
+            // Set category - prefixed with [TSBO] to distinguish from TiedSiren51
             breadcrumbClass.getMethod("setCategory", String::class.java)
-                .invoke(breadcrumb, "[TSOB].$category")
+                .invoke(breadcrumb, "[TSBO].$category")
 
             // Set message - also prefixed
             breadcrumbClass.getMethod("setMessage", String::class.java)
-                .invoke(breadcrumb, "[TSOB] $message")
+                .invoke(breadcrumb, "[TSBO] $message")
 
             // Set level to INFO
             val sentryLevelClass = Class.forName("io.sentry.SentryLevel")
@@ -91,7 +91,7 @@ object SentryHelper {
      * Captures an error message to Sentry.
      */
     fun captureMessage(message: String, level: String = "error") {
-        Log.e("[TSOB].Error", message)
+        Log.e("[TSBO].Error", message)
 
         if (!sentryAvailable) return
 
@@ -106,7 +106,7 @@ object SentryHelper {
             }
 
             sentryClass.getMethod("captureMessage", String::class.java, sentryLevelClass)
-                .invoke(null, "[TSOB] $message", sentryLevel)
+                .invoke(null, "[TSBO] $message", sentryLevel)
 
         } catch (e: Exception) {
             Log.w(TAG, "Failed to capture Sentry message: ${e.message}")
@@ -117,7 +117,7 @@ object SentryHelper {
      * Captures an exception to Sentry.
      */
     fun captureException(throwable: Throwable) {
-        Log.e("[TSOB].Exception", "[TSOB] Exception captured", throwable)
+        Log.e("[TSBO].Exception", "[TSBO] Exception captured", throwable)
 
         if (!sentryAvailable) return
 
