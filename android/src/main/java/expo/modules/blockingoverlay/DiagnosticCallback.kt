@@ -27,7 +27,7 @@ class DiagnosticCallback : ForegroundServiceCallback {
         // Sentry breadcrumb
         SentryHelper.addBreadcrumb("diagnostic", "DI test - service started", mapOf(
             "callbackClass" to CLASS_NAME,
-            "contextAvailable" to (context != null),
+            "contextPackage" to (context.packageName ?: "unknown"),
             "timestamp" to System.currentTimeMillis()
         ))
 

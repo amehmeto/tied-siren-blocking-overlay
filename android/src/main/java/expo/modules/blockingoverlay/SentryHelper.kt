@@ -11,6 +11,13 @@ object SentryHelper {
 
     private const val TAG = "SentryHelper"
 
+    /**
+     * Enable verbose breadcrumbs (includes detailed window info on every app change).
+     * Set to false in production to reduce overhead.
+     */
+    @Volatile
+    var verboseLogging: Boolean = false
+
     // Cache whether Sentry is available to avoid repeated reflection
     private val sentryAvailable: Boolean by lazy {
         try {
@@ -20,6 +27,15 @@ object SentryHelper {
             Log.w(TAG, "Sentry not available - breadcrumbs will only appear in logcat")
             false
         }
+    }
+
+    /**
+     * Adds a verbose breadcrumb - only logged when verboseLogging is enabled.
+     * Use for high-frequency events like onAppChanged to avoid overhead.
+     */
+    fun addVerboseBreadcrumb(category: String, message: String, dataProvider: () -> Map<String, Any>?) {
+        if (!verboseLogging) return
+        addBreadcrumb(category, message, dataProvider())
     }
 
     /**
