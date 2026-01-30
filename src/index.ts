@@ -113,3 +113,11 @@ export async function clearBlockedApps(): Promise<void> {
  */
 export const BLOCKING_CALLBACK_CLASS =
   'expo.modules.blockingoverlay.BlockingCallback'
+
+/**
+ * Fully qualified class name for DiagnosticCallback.
+ * Use this for testing that reflection-based DI is working.
+ * Shows a Toast and logs to Sentry when foreground service starts.
+ */
+export const DIAGNOSTIC_CALLBACK_CLASS =
+  'expo.modules.blockingoverlay.DiagnosticCallback'

@@ -28,10 +28,14 @@ if (useManagedAndroidSdkVersions) {
 }
 
 // Check if interface dependencies are available (only in main app context)
-def hasInterfaceDependencies = findProject(':expo-accessibility-service') != null &&
-                                findProject(':expo-foreground-service') != null
+// Project names vary based on package naming - check all known variants
+def accessibilityServiceProject = findProject(':expo-accessibility-service') ?:
+                                   findProject(':amehmeto-expo-accessibility-service')
+def foregroundServiceProject = findProject(':expo-foreground-service') ?:
+                                findProject(':amehmeto-expo-foreground-service')
+def hasInterfaceDependencies = accessibilityServiceProject != null && foregroundServiceProject != null
 
-// Exclude BlockingCallback files when interface dependencies aren't available
+// Exclude callback files when interface dependencies aren't available
 // These files require expo-accessibility-service and expo-foreground-service
 // which are only present in the main app context.
 if (!hasInterfaceDependencies) {
@@ -39,6 +43,7 @@ if (!hasInterfaceDependencies) {
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
       exclude '**/BlockingCallback.kt'
       exclude '**/BlockingCallbackTest.kt'
+      exclude '**/DiagnosticCallback.kt'
     }
   }
 }
@@ -66,11 +71,13 @@ dependencies {
   implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
   implementation 'androidx.appcompat:appcompat:1.6.1'
 
+  // Sentry for debugging - compileOnly since it's provided by host app via @sentry/react-native
+  compileOnly 'io.sentry:sentry-android:7.3.0'
+
   // Required for implementing interfaces from other modules
   // compileOnly means compile against interfaces but don't bundle them (provided at runtime by app)
   // These dependencies are conditional - only available when used within the main app
-  def accessibilityServiceProject = findProject(':expo-accessibility-service')
-  def foregroundServiceProject = findProject(':expo-foreground-service')
+  // Note: accessibilityServiceProject and foregroundServiceProject are defined at top level
 
   if (accessibilityServiceProject != null) {
     compileOnly accessibilityServiceProject
