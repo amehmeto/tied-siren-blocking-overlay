@@ -104,19 +104,22 @@ class BlockingCallback : ForegroundServiceCallback, AccessibilityService.EventLi
 
         val shouldBlock = activeMatchingWindows.isNotEmpty()
 
-        // Detailed Sentry breadcrumb for debugging
-        SentryHelper.addBreadcrumb("callback", "onAppChanged", mapOf(
-            "packageName" to packageName,
-            "currentTime" to now.toString(),
-            "totalWindows" to schedule.size,
-            "activeWindows" to activeWindowCount,
-            "matchingWindows" to matchingWindows.size,
-            "activeMatchingWindows" to activeMatchingWindows.size,
-            "shouldBlock" to shouldBlock,
-            "windowDetails" to schedule.map { w ->
-                "${w.id}:${w.startTime}-${w.endTime}:active=${w.isActiveAt(now)}:hasPackage=${w.packageNames.contains(packageName)}"
-            }.joinToString("; ")
-        ))
+        // Verbose breadcrumb for debugging - only logged when SentryHelper.verboseLogging is true
+        // Uses lazy data provider to avoid string building overhead in production
+        SentryHelper.addVerboseBreadcrumb("callback", "onAppChanged") {
+            mapOf(
+                "packageName" to packageName,
+                "currentTime" to now.toString(),
+                "totalWindows" to schedule.size,
+                "activeWindows" to activeWindowCount,
+                "matchingWindows" to matchingWindows.size,
+                "activeMatchingWindows" to activeMatchingWindows.size,
+                "shouldBlock" to shouldBlock,
+                "windowDetails" to schedule.map { w ->
+                    "${w.id}:${w.startTime}-${w.endTime}:active=${w.isActiveAt(now)}:hasPackage=${w.packageNames.contains(packageName)}"
+                }.joinToString("; ")
+            )
+        }
 
         if (shouldBlock) {
             // Debounce: skip if same package was blocked recently

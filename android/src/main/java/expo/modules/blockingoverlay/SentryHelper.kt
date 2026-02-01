@@ -11,6 +11,13 @@ object SentryHelper {
 
     private const val TAG = "SentryHelper"
 
+    /**
+     * Enable verbose breadcrumbs (includes detailed window info on every app change).
+     * Set to false in production to reduce overhead.
+     */
+    @Volatile
+    var verboseLogging: Boolean = false
+
     // Cache whether Sentry is available to avoid repeated reflection
     private val sentryAvailable: Boolean by lazy {
         try {
@@ -23,13 +30,22 @@ object SentryHelper {
     }
 
     /**
+     * Adds a verbose breadcrumb - only logged when verboseLogging is enabled.
+     * Use for high-frequency events like onAppChanged to avoid overhead.
+     */
+    fun addVerboseBreadcrumb(category: String, message: String, dataProvider: () -> Map<String, Any>?) {
+        if (!verboseLogging) return
+        addBreadcrumb(category, message, dataProvider())
+    }
+
+    /**
      * Adds a breadcrumb to Sentry for debugging.
      * Falls back to Log.d if Sentry is not available.
      */
     fun addBreadcrumb(category: String, message: String, data: Map<String, Any>? = null) {
         // Always log to logcat for adb debugging
         val dataStr = data?.entries?.joinToString(", ") { "${it.key}=${it.value}" } ?: ""
-        Log.d("TSOB.$category", if (dataStr.isNotEmpty()) "$message | $dataStr" else message)
+        Log.d("[TSBO].$category", if (dataStr.isNotEmpty()) "$message | $dataStr" else message)
 
         if (!sentryAvailable) return
 
@@ -40,13 +56,13 @@ object SentryHelper {
             // Create breadcrumb: Breadcrumb()
             val breadcrumb = breadcrumbClass.getDeclaredConstructor().newInstance()
 
-            // Set category
+            // Set category - prefixed with [TSBO] to distinguish from TiedSiren51
             breadcrumbClass.getMethod("setCategory", String::class.java)
-                .invoke(breadcrumb, "tsob.$category")
+                .invoke(breadcrumb, "[TSBO].$category")
 
-            // Set message
+            // Set message - also prefixed
             breadcrumbClass.getMethod("setMessage", String::class.java)
-                .invoke(breadcrumb, message)
+                .invoke(breadcrumb, "[TSBO] $message")
 
             // Set level to INFO
             val sentryLevelClass = Class.forName("io.sentry.SentryLevel")
@@ -75,7 +91,7 @@ object SentryHelper {
      * Captures an error message to Sentry.
      */
     fun captureMessage(message: String, level: String = "error") {
-        Log.e("TSOB.Error", message)
+        Log.e("[TSBO].Error", message)
 
         if (!sentryAvailable) return
 
@@ -90,7 +106,7 @@ object SentryHelper {
             }
 
             sentryClass.getMethod("captureMessage", String::class.java, sentryLevelClass)
-                .invoke(null, "[TSOB] $message", sentryLevel)
+                .invoke(null, "[TSBO] $message", sentryLevel)
 
         } catch (e: Exception) {
             Log.w(TAG, "Failed to capture Sentry message: ${e.message}")
@@ -101,7 +117,7 @@ object SentryHelper {
      * Captures an exception to Sentry.
      */
     fun captureException(throwable: Throwable) {
-        Log.e("TSOB.Exception", "Exception captured", throwable)
+        Log.e("[TSBO].Exception", "[TSBO] Exception captured", throwable)
 
         if (!sentryAvailable) return
 
