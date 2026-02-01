@@ -20,6 +20,9 @@
     ],
     "*.{json,md}": [
       "prettier --write"
+    ],
+    ".husky/scripts/*.sh": [
+      "shellcheck"
     ]
   },
   "keywords": [
