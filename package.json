@@ -41,7 +41,7 @@
   "homepage": "https://github.com/amehmeto/tied-siren-blocking-overlay#readme",
   "devDependencies": {
     "@types/jest": "^30.0.0",
-    "expo-module-scripts": "^4.0.0",
+    "expo-module-scripts": "^5.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "ts-jest": "^29.4.5",
