@@ -45,13 +45,15 @@ class BlockingCallback : ForegroundServiceCallback, AccessibilityService.EventLi
     private val watchdogHandler = Handler(Looper.getMainLooper())
 
     // Broadcast receiver for accessibility service reconnection
+    @Volatile
     private var serviceConnectionReceiver: BroadcastReceiver? = null
 
     private val watchdogRunnable: Runnable = object : Runnable {
         override fun run() {
             val ctx = applicationContext
             if (ctx == null) {
-                Log.w(TAG, "Watchdog: context is null, skipping")
+                // Context is null — service has stopped, let watchdog die intentionally
+                Log.w(TAG, "Watchdog: context is null, stopping")
                 return
             }
 
@@ -68,7 +70,7 @@ class BlockingCallback : ForegroundServiceCallback, AccessibilityService.EventLi
                 "serviceConnected" to isServiceConnected
             ))
 
-            if (!isRegistered) {
+            if (!isRegistered && isServiceConnected) {
                 Log.w(TAG, "Watchdog: listener not registered, re-registering")
                 val registered = AccessibilityService.addEventListener(this@BlockingCallback)
                 SentryHelper.addBreadcrumb("watchdog", "Re-registration", mapOf(
@@ -79,6 +81,8 @@ class BlockingCallback : ForegroundServiceCallback, AccessibilityService.EventLi
                         "Watchdog: listener re-registration failed", "error"
                     )
                 }
+            } else if (!isRegistered) {
+                Log.d(TAG, "Watchdog: listener not registered but service disconnected, skipping re-registration")
             }
 
             // Schedule next check
@@ -168,6 +172,11 @@ class BlockingCallback : ForegroundServiceCallback, AccessibilityService.EventLi
                     SentryHelper.addBreadcrumb("recovery", "Re-registered on reconnect", mapOf(
                         "success" to registered
                     ))
+                    if (!registered) {
+                        SentryHelper.captureMessage(
+                            "Recovery: listener re-registration failed on reconnect", "error"
+                        )
+                    }
                 } else {
                     Log.d(TAG, "Listener still registered after service reconnect")
                     SentryHelper.addBreadcrumb("recovery", "Listener intact on reconnect")
