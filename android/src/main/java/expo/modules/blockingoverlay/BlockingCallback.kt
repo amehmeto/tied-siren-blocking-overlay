@@ -6,7 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.Handler
-import android.os.Looper
+import android.os.HandlerThread
 import android.util.Log
 import expo.modules.accessibilityservice.AccessibilityService
 import expo.modules.foregroundservice.ForegroundServiceCallback
@@ -41,12 +41,15 @@ class BlockingCallback : ForegroundServiceCallback, AccessibilityService.EventLi
     @Volatile
     private var lastOverlayPackage: String? = null
 
-    // Watchdog handler for periodic listener verification
-    private val watchdogHandler = Handler(Looper.getMainLooper())
+    // Watchdog runs on a dedicated background thread to avoid blocking the main thread
+    private var watchdogThread: HandlerThread? = null
+    private var watchdogHandler: Handler? = null
 
     // Broadcast receiver for accessibility service reconnection
     @Volatile
     private var serviceConnectionReceiver: BroadcastReceiver? = null
+    @Volatile
+    private var receiverContext: Context? = null
 
     private val watchdogRunnable: Runnable = object : Runnable {
         override fun run() {
@@ -57,36 +60,69 @@ class BlockingCallback : ForegroundServiceCallback, AccessibilityService.EventLi
                 return
             }
 
-            val isRegistered = AccessibilityService.hasListener(this@BlockingCallback)
-            val listenerCount = AccessibilityService.getListenerCount()
-            val isServiceConnected = AccessibilityService.isConnected
-
-            Log.d(TAG, "Watchdog heartbeat: registered=$isRegistered, " +
-                "listeners=$listenerCount, serviceConnected=$isServiceConnected")
-
-            SentryHelper.addBreadcrumb("watchdog", "Heartbeat", mapOf(
-                "registered" to isRegistered,
-                "listenerCount" to listenerCount,
-                "serviceConnected" to isServiceConnected
-            ))
-
-            if (!isRegistered && isServiceConnected) {
-                Log.w(TAG, "Watchdog: listener not registered, re-registering")
-                val registered = AccessibilityService.addEventListener(this@BlockingCallback)
-                SentryHelper.addBreadcrumb("watchdog", "Re-registration", mapOf(
-                    "success" to registered
-                ))
-                if (!registered) {
-                    SentryHelper.captureMessage(
-                        "Watchdog: listener re-registration failed", "error"
-                    )
-                }
-            } else if (!isRegistered) {
-                Log.d(TAG, "Watchdog: listener not registered but service disconnected, skipping re-registration")
-            }
+            checkAndRecoverListener()
 
             // Schedule next check
-            watchdogHandler.postDelayed(this, WATCHDOG_INTERVAL_MS)
+            watchdogHandler?.postDelayed(this, WATCHDOG_INTERVAL_MS)
+        }
+    }
+
+    /**
+     * Check if this callback is still registered as an accessibility listener
+     * and re-register if it was dropped while the service is connected.
+     */
+    internal fun checkAndRecoverListener() {
+        val isRegistered = AccessibilityService.hasListener(this)
+        val listenerCount = AccessibilityService.getListenerCount()
+        val isServiceConnected = AccessibilityService.isConnected
+
+        Log.d(TAG, "Watchdog heartbeat: registered=$isRegistered, " +
+            "listeners=$listenerCount, serviceConnected=$isServiceConnected")
+
+        SentryHelper.addBreadcrumb("watchdog", "Heartbeat", mapOf(
+            "registered" to isRegistered,
+            "listenerCount" to listenerCount,
+            "serviceConnected" to isServiceConnected
+        ))
+
+        if (!isRegistered && isServiceConnected) {
+            Log.w(TAG, "Watchdog: listener not registered, re-registering")
+            val registered = AccessibilityService.addEventListener(this)
+            SentryHelper.addBreadcrumb("watchdog", "Re-registration", mapOf(
+                "success" to registered
+            ))
+            if (!registered) {
+                SentryHelper.captureMessage(
+                    "Watchdog: listener re-registration failed", "error"
+                )
+            }
+        } else if (!isRegistered) {
+            Log.d(TAG, "Watchdog: listener not registered but service disconnected, skipping re-registration")
+        }
+    }
+
+    /**
+     * Handle accessibility service reconnection by checking and recovering
+     * the listener registration if needed.
+     */
+    internal fun handleServiceReconnection() {
+        Log.d(TAG, "Accessibility service reconnected broadcast received")
+
+        val isRegistered = AccessibilityService.hasListener(this)
+        if (!isRegistered) {
+            Log.w(TAG, "Listener lost after service reconnect, re-registering")
+            val registered = AccessibilityService.addEventListener(this)
+            SentryHelper.addBreadcrumb("recovery", "Re-registered on reconnect", mapOf(
+                "success" to registered
+            ))
+            if (!registered) {
+                SentryHelper.captureMessage(
+                    "Recovery: listener re-registration failed on reconnect", "error"
+                )
+            }
+        } else {
+            Log.d(TAG, "Listener still registered after service reconnect")
+            SentryHelper.addBreadcrumb("recovery", "Listener intact on reconnect")
         }
     }
 
@@ -148,64 +184,61 @@ class BlockingCallback : ForegroundServiceCallback, AccessibilityService.EventLi
     // ========== Watchdog & Recovery ==========
 
     private fun startWatchdog() {
-        watchdogHandler.removeCallbacks(watchdogRunnable)
-        watchdogHandler.postDelayed(watchdogRunnable, WATCHDOG_INTERVAL_MS)
+        stopWatchdog()
+        val thread = HandlerThread("BlockingCallback-Watchdog").apply { start() }
+        watchdogThread = thread
+        val handler = Handler(thread.looper)
+        watchdogHandler = handler
+        handler.postDelayed(watchdogRunnable, WATCHDOG_INTERVAL_MS)
         Log.d(TAG, "Watchdog started (interval=${WATCHDOG_INTERVAL_MS}ms)")
     }
 
     private fun stopWatchdog() {
-        watchdogHandler.removeCallbacks(watchdogRunnable)
+        watchdogHandler?.removeCallbacks(watchdogRunnable)
+        watchdogThread?.quitSafely()
+        watchdogThread = null
+        watchdogHandler = null
         Log.d(TAG, "Watchdog stopped")
     }
 
     private fun registerServiceConnectionReceiver(context: Context) {
-        if (serviceConnectionReceiver != null) return
+        synchronized(this) {
+            if (serviceConnectionReceiver != null) return
 
-        serviceConnectionReceiver = object : BroadcastReceiver() {
-            override fun onReceive(ctx: Context?, intent: Intent?) {
-                Log.d(TAG, "Accessibility service reconnected broadcast received")
-
-                val isRegistered = AccessibilityService.hasListener(this@BlockingCallback)
-                if (!isRegistered) {
-                    Log.w(TAG, "Listener lost after service reconnect, re-registering")
-                    val registered = AccessibilityService.addEventListener(this@BlockingCallback)
-                    SentryHelper.addBreadcrumb("recovery", "Re-registered on reconnect", mapOf(
-                        "success" to registered
-                    ))
-                    if (!registered) {
-                        SentryHelper.captureMessage(
-                            "Recovery: listener re-registration failed on reconnect", "error"
-                        )
-                    }
-                } else {
-                    Log.d(TAG, "Listener still registered after service reconnect")
-                    SentryHelper.addBreadcrumb("recovery", "Listener intact on reconnect")
+            serviceConnectionReceiver = object : BroadcastReceiver() {
+                override fun onReceive(ctx: Context?, intent: Intent?) {
+                    handleServiceReconnection()
                 }
             }
-        }
 
-        val filter = IntentFilter(AccessibilityService.ACTION_SERVICE_CONNECTED)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.registerReceiver(
-                serviceConnectionReceiver, filter, Context.RECEIVER_NOT_EXPORTED
-            )
-        } else {
-            context.registerReceiver(serviceConnectionReceiver, filter)
-        }
+            receiverContext = context
 
-        Log.d(TAG, "Service connection receiver registered")
+            val filter = IntentFilter(AccessibilityService.ACTION_SERVICE_CONNECTED)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.registerReceiver(
+                    serviceConnectionReceiver, filter, Context.RECEIVER_NOT_EXPORTED
+                )
+            } else {
+                context.registerReceiver(serviceConnectionReceiver, filter)
+            }
+
+            Log.d(TAG, "Service connection receiver registered")
+        }
     }
 
     private fun unregisterServiceConnectionReceiver() {
-        serviceConnectionReceiver?.let { receiver ->
-            try {
-                applicationContext?.unregisterReceiver(receiver)
-                Log.d(TAG, "Service connection receiver unregistered")
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to unregister receiver: ${e.message}")
+        synchronized(this) {
+            serviceConnectionReceiver?.let { receiver ->
+                try {
+                    receiverContext?.unregisterReceiver(receiver)
+                    Log.d(TAG, "Service connection receiver unregistered")
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to unregister receiver: ${e.message}")
+                }
             }
+            serviceConnectionReceiver = null
+            receiverContext = null
         }
-        serviceConnectionReceiver = null
     }
 
     // ========== AccessibilityService.EventListener ==========

@@ -7,7 +7,9 @@ import expo.modules.accessibilityservice.AccessibilityService
 import expo.modules.foregroundservice.ForegroundServiceCallback
 import org.json.JSONArray
 import org.json.JSONObject
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -97,6 +99,14 @@ class BlockingCallbackTest {
 
         // Invalidate cache before each test to ensure fresh reads
         BlockingScheduleStorage.invalidateCache()
+
+        // Reset accessibility service state
+        AccessibilityService.resetForTesting()
+    }
+
+    @After
+    fun tearDown() {
+        AccessibilityService.resetForTesting()
     }
 
     // ========== Interface Tests ==========
@@ -400,5 +410,107 @@ class BlockingCallbackTest {
 
         // Should find package in second window and block
         verify(mockApplicationContext).startActivity(any())
+    }
+
+    // ========== Watchdog Recovery Tests ==========
+
+    @Test
+    fun `checkAndRecoverListener re-registers when listener dropped and service connected`() {
+        val callback = BlockingCallback()
+
+        // Simulate: service is connected, callback was registered then dropped
+        AccessibilityService.setConnectedForTesting(true)
+        AccessibilityService.addEventListener(callback)
+        AccessibilityService.removeEventListener(callback)
+
+        assertFalse("Listener should not be registered",
+            AccessibilityService.hasListener(callback))
+
+        callback.checkAndRecoverListener()
+
+        assertTrue("Listener should be re-registered after recovery",
+            AccessibilityService.hasListener(callback))
+    }
+
+    @Test
+    fun `checkAndRecoverListener does nothing when listener is present`() {
+        val callback = BlockingCallback()
+
+        AccessibilityService.setConnectedForTesting(true)
+        AccessibilityService.addEventListener(callback)
+
+        assertEquals("Should have 1 listener", 1, AccessibilityService.getListenerCount())
+
+        callback.checkAndRecoverListener()
+
+        assertEquals("Should still have exactly 1 listener (no duplicate)",
+            1, AccessibilityService.getListenerCount())
+    }
+
+    @Test
+    fun `checkAndRecoverListener skips re-registration when service disconnected`() {
+        val callback = BlockingCallback()
+
+        // Service is disconnected (isConnected = false by default after reset)
+        assertFalse("Service should be disconnected", AccessibilityService.isConnected)
+        assertFalse("Listener should not be registered",
+            AccessibilityService.hasListener(callback))
+
+        callback.checkAndRecoverListener()
+
+        assertFalse("Listener should NOT be re-registered when service is disconnected",
+            AccessibilityService.hasListener(callback))
+    }
+
+    // ========== Broadcast Recovery Tests ==========
+
+    @Test
+    fun `handleServiceReconnection re-registers when listener is lost`() {
+        val callback = BlockingCallback()
+
+        // Simulate: listener was dropped during service restart
+        assertFalse("Listener should not be registered",
+            AccessibilityService.hasListener(callback))
+
+        callback.handleServiceReconnection()
+
+        assertTrue("Listener should be re-registered after reconnection",
+            AccessibilityService.hasListener(callback))
+    }
+
+    @Test
+    fun `handleServiceReconnection does nothing when listener is intact`() {
+        val callback = BlockingCallback()
+
+        AccessibilityService.addEventListener(callback)
+        assertEquals("Should have 1 listener", 1, AccessibilityService.getListenerCount())
+
+        callback.handleServiceReconnection()
+
+        assertEquals("Should still have exactly 1 listener (no duplicate)",
+            1, AccessibilityService.getListenerCount())
+    }
+
+    @Test
+    fun `checkAndRecoverListener prevents duplicate registration`() {
+        val callback = BlockingCallback()
+
+        AccessibilityService.setConnectedForTesting(true)
+
+        // First recovery
+        callback.checkAndRecoverListener()
+        assertEquals("Should have 1 listener after first recovery",
+            1, AccessibilityService.getListenerCount())
+
+        // Remove and recover again
+        AccessibilityService.removeEventListener(callback)
+        callback.checkAndRecoverListener()
+        assertEquals("Should have 1 listener after second recovery",
+            1, AccessibilityService.getListenerCount())
+
+        // Recovery when already registered should not add duplicate
+        callback.checkAndRecoverListener()
+        assertEquals("Should still have 1 listener (no duplicate)",
+            1, AccessibilityService.getListenerCount())
     }
 }
