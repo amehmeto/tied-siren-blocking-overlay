@@ -42,7 +42,9 @@ class BlockingCallback : ForegroundServiceCallback, AccessibilityService.EventLi
     private var lastOverlayPackage: String? = null
 
     // Watchdog runs on a dedicated background thread to avoid blocking the main thread
+    @Volatile
     private var watchdogThread: HandlerThread? = null
+    @Volatile
     private var watchdogHandler: Handler? = null
 
     // Broadcast receiver for accessibility service reconnection

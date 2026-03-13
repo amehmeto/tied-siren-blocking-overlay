@@ -468,7 +468,8 @@ class BlockingCallbackTest {
     fun `handleServiceReconnection re-registers when listener is lost`() {
         val callback = BlockingCallback()
 
-        // Simulate: listener was dropped during service restart
+        // Simulate: service just reconnected (broadcast fires because service connected)
+        AccessibilityService.setConnectedForTesting(true)
         assertFalse("Listener should not be registered",
             AccessibilityService.hasListener(callback))
 
